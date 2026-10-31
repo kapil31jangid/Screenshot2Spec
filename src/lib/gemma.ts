@@ -4,6 +4,7 @@ export interface GemmaAnalysisRequest {
   imageBuffer: Buffer;
   mimeType: string;
   prompt: string;
+  timeoutMs?: number;
 }
 
 export interface GemmaCallResult {
@@ -11,6 +12,8 @@ export interface GemmaCallResult {
   cleanedJsonText: string;
   modelUsed: string;
 }
+
+const DEFAULT_TIMEOUT_MS = 45000; // 45 seconds
 
 /**
  * Strips outer markdown code block fences (e.g. ```json ... ```)
@@ -33,7 +36,7 @@ export function extractCleanJson(rawText: string): string {
 }
 
 /**
- * Executes a multimodal analysis call to Gemma 4 via Google GenAI SDK.
+ * Executes a multimodal analysis call to Gemma 4 via Google GenAI SDK with timeout.
  */
 export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promise<GemmaCallResult> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -42,18 +45,18 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
   }
 
   // Model ID: Use GEMMA_MODEL from environment, ensuring 'models/' prefix
-  let rawModelName = (process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it').trim();
+  const rawModelName = (process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it').trim();
   const normalizedModel = rawModelName.startsWith('models/') ? rawModelName : `models/${rawModelName}`;
+  const timeoutMs = request.timeoutMs || DEFAULT_TIMEOUT_MS;
 
-  console.log(`[Gemma Backend] Dispatching analysis to model: ${normalizedModel} (image size: ${(request.imageBuffer.length / 1024).toFixed(1)} KB, type: ${request.mimeType})`);
+  console.log(`[Gemma Backend] Dispatching analysis to model: ${normalizedModel} (image size: ${(request.imageBuffer.length / 1024).toFixed(1)} KB, type: ${request.mimeType}, timeout: ${timeoutMs}ms)`);
 
-  try {
+  const executeApiCall = async (): Promise<GemmaCallResult> => {
     const ai = new GoogleGenAI({ apiKey });
     const base64Data = request.imageBuffer.toString('base64');
 
-    let response;
-    try {
-      response = await ai.models.generateContent({
+    const makeCall = async () => {
+      return await ai.models.generateContent({
         model: normalizedModel,
         contents: [
           {
@@ -75,35 +78,20 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
           temperature: 0.1,
         },
       });
-    } catch (primaryErr: unknown) {
-      // If models/ prefix failed or raw name is needed, retry with raw name
-      const pMsg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
-      if (rawModelName !== normalizedModel && (pMsg.includes('500') || pMsg.includes('NOT_FOUND') || pMsg.includes('404'))) {
-        console.warn(`[Gemma Backend] Retrying with raw model identifier: ${rawModelName}`);
-        response = await ai.models.generateContent({
-          model: rawModelName,
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  inlineData: {
-                    mimeType: request.mimeType,
-                    data: base64Data,
-                  },
-                },
-                {
-                  text: request.prompt,
-                },
-              ],
-            },
-          ],
-          config: {
-            temperature: 0.1,
-          },
-        });
+    };
+
+    let response;
+    try {
+      response = await makeCall();
+    } catch (firstErr: unknown) {
+      const errMsg = firstErr instanceof Error ? firstErr.message : String(firstErr);
+      // Bounded retry (1 attempt) if upstream Google AI Studio returns a transient 500/503 error
+      if (errMsg.includes('500') || errMsg.includes('503') || errMsg.includes('INTERNAL') || errMsg.includes('UNAVAILABLE')) {
+        console.warn(`[Gemma Backend] Transient upstream failure detected: ${errMsg}. Performing bounded retry (1/1)...`);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        response = await makeCall();
       } else {
-        throw primaryErr;
+        throw firstErr;
       }
     }
 
@@ -119,10 +107,31 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
       cleanedJsonText,
       modelUsed: normalizedModel,
     };
+  };
+
+  // Promise.race for reliable timeout protection
+  let timerId: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timerId = setTimeout(() => {
+      reject(new Error(`TIMEOUT: Gemma 4 analysis timed out after ${timeoutMs}ms. Google AI Studio API took too long to respond.`));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([executeApiCall(), timeoutPromise]);
+    if (timerId) clearTimeout(timerId);
+    return result;
   } catch (err: unknown) {
+    if (timerId) clearTimeout(timerId);
     const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`[Gemma Backend Error]: ${errorMsg}`);
 
+    if (errorMsg.startsWith('TIMEOUT:')) {
+      throw err;
+    }
+    if (errorMsg.startsWith('EMPTY_MODEL_RESPONSE:')) {
+      throw err;
+    }
     if (errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED') || errorMsg.includes('API_KEY_INVALID')) {
       throw new Error('AUTHENTICATION_ERROR: Invalid or unauthorized Google AI Studio API key.');
     }
@@ -136,4 +145,3 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
     throw new Error(`ANALYSIS_FAILED: ${errorMsg}`);
   }
 }
-
