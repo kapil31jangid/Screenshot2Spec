@@ -285,3 +285,4 @@ test('Blueprint Exporters: Generates valid Markdown, JSON, and TypeScript artifa
   assert.ok(tsInterfaces.includes('export interface AppSidebarProps'));
   assert.ok(tsInterfaces.includes('export interface RevenueBarChartProps'));
 });
+

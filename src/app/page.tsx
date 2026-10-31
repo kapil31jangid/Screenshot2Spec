@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import ScreenshotUpload from '@/components/ScreenshotUpload';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import ResultsDashboard from '@/components/ResultsDashboard';
-import { generateDeveloperBlueprint } from '@/components/mockSpecAdapter';
-import { mockDashboardAnalysis } from '@/lib/mockAnalysis';
-import { analysisSchema } from '@/lib/schemas';
-import { ValidatedAnalysis } from '@/types/analysis';
-import { DeveloperBlueprint } from '@/types/specification';
+import { useScreenshot } from '@/hooks/useScreenshot';
+import { useAnalysis } from '@/hooks/useAnalysis';
 import {
   Sparkles,
   ArrowRight,
@@ -21,189 +18,50 @@ import {
 } from 'lucide-react';
 
 export default function Home() {
-  // Upload and config state
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Preferences state
   const [framework, setFramework] = useState('nextjs-ts');
   const [styling, setStyling] = useState('tailwind');
   const [instructions, setInstructions] = useState('');
 
-  // Execution and feedback state
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<string>('');
-  const [apiError, setApiError] = useState<string | null>(null);
+  // Screenshot upload hook
+  const {
+    file,
+    previewUrl,
+    error: uploadError,
+    setError: setUploadError,
+    selectFile,
+    clearFile,
+  } = useScreenshot();
 
-  // Analysis result state
-  const [analysis, setAnalysis] = useState<ValidatedAnalysis | null>(null);
-  const [blueprint, setBlueprint] = useState<DeveloperBlueprint | null>(null);
+  // Analysis and blueprint hook
+  const {
+    analysis,
+    blueprint,
+    isLoading,
+    loadingStep,
+    error: apiError,
+    analyze,
+    loadDemo,
+    reset: resetAnalysis,
+  } = useAnalysis();
 
-  // In-flight request cancellation reference
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Maintain preview URL lifecycle
-  useEffect(() => {
+  const handleAnalyzeClick = async () => {
     if (!file) {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
-      }
+      setUploadError('Please upload a user interface screenshot before analyzing.');
       return;
     }
 
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [file]);
-
-  // Cleanup in-flight requests on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const handleAnalyze = async () => {
-    setValidationError(null);
-    setApiError(null);
-
-    if (!file) {
-      setValidationError('Please upload a user interface screenshot before analyzing.');
-      return;
-    }
-
-    if (file.size === 0) {
-      setValidationError('The selected file is empty (0 bytes). Please upload a valid image file.');
-      return;
-    }
-
-    // Cancel any existing in-flight request to avoid race conditions
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    setIsLoading(true);
-    setLoadingStep('Uploading screenshot to /api/analyze...');
-
-    try {
-      // Build FormData strictly as specified by team contract
-      const formData = new FormData();
-      formData.append('screenshot', file);
-      formData.append('framework', framework);
-      formData.append('styling', styling);
-      if (instructions.trim()) {
-        formData.append('instructions', instructions.trim());
-      }
-
-      setLoadingStep('Invoking Gemma 4 multimodal visual reasoning...');
-
-      let fetchedAnalysis: ValidatedAnalysis | null = null;
-
-      try {
-        // Send request to real backend API route (do NOT set multipart Content-Type header manually)
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          body: formData,
-          signal: abortController.signal,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.analysis) {
-            // Validate response strictly against shared Zod schema
-            const parsed = analysisSchema.safeParse(data.analysis);
-            if (!parsed.success) {
-              const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
-              throw new Error(`API returned response that violates shared schema: ${issues}`);
-            }
-            fetchedAnalysis = parsed.data;
-          } else {
-            throw new Error('API response missing "analysis" property in JSON payload.');
-          }
-        } else if (response.status === 404) {
-          // Backend route not yet deployed by Member 2; fallback seamlessly to shared mock analysis
-          console.warn('POST /api/analyze returned 404. Falling back to shared mock analysis.');
-          setLoadingStep('Backend route pending from Member 2 — using shared mock dashboard analysis...');
-          await new Promise((res) => setTimeout(res, 800));
-          fetchedAnalysis = mockDashboardAnalysis;
-        } else {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `Server responded with status ${response.status}`);
-        }
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          // Request was intentionally cancelled
-          return;
-        }
-
-        console.warn('API error encountered, applying shared mock analysis fallback:', err);
-        setLoadingStep('Using shared mock analysis for testing interface...');
-        await new Promise((res) => setTimeout(res, 800));
-        fetchedAnalysis = mockDashboardAnalysis;
-      }
-
-      if (fetchedAnalysis) {
-        setLoadingStep('Constructing component hierarchy & matching curated libraries...');
-        const generatedBlueprint = generateDeveloperBlueprint(
-          fetchedAnalysis,
-          framework === 'nextjs-ts' ? 'React + TypeScript (Next.js App Router)' : framework,
-          styling === 'tailwind' ? 'Tailwind CSS' : styling,
-          instructions
-        );
-
-        setAnalysis(fetchedAnalysis);
-        setBlueprint(generatedBlueprint);
-      }
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      const msg = err instanceof Error ? err.message : 'An unexpected error occurred during analysis.';
-      setApiError(msg);
-    } finally {
-      setIsLoading(false);
-      setLoadingStep('');
-      abortControllerRef.current = null;
-    }
+    await analyze(file, {
+      framework,
+      styling,
+      instructions,
+    });
   };
 
-  const handleClear = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setFile(null);
-    setAnalysis(null);
-    setBlueprint(null);
-    setValidationError(null);
-    setApiError(null);
+  const handleClearAll = () => {
+    clearFile();
+    resetAnalysis();
     setInstructions('');
-    setIsLoading(false);
-  };
-
-  const handleLoadDemo = () => {
-    setValidationError(null);
-    setApiError(null);
-    setIsLoading(true);
-    setLoadingStep('Loading demo analytics dashboard analysis...');
-
-    setTimeout(() => {
-      const demoBlueprint = generateDeveloperBlueprint(
-        mockDashboardAnalysis,
-        'React + TypeScript (Next.js App Router)',
-        'Tailwind CSS',
-        'Demo dashboard analysis with modern dark styling'
-      );
-      setAnalysis(mockDashboardAnalysis);
-      setBlueprint(demoBlueprint);
-      setIsLoading(false);
-      setLoadingStep('');
-    }, 600);
   };
 
   return (
@@ -234,7 +92,7 @@ export default function Home() {
             {!analysis && (
               <button
                 type="button"
-                onClick={handleLoadDemo}
+                onClick={loadDemo}
                 aria-label="Load demo analytics dashboard"
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
               >
@@ -293,10 +151,10 @@ export default function Home() {
                   <span>Upload Screenshot</span>
                 </h2>
                 <ScreenshotUpload
-                  onFileSelect={setFile}
+                  onFileSelect={selectFile}
                   selectedFile={file}
-                  error={validationError}
-                  onError={setValidationError}
+                  error={uploadError}
+                  onError={setUploadError}
                   disabled={isLoading}
                 />
               </div>
@@ -333,7 +191,7 @@ export default function Home() {
               <div className="pt-4 flex flex-col items-center gap-3">
                 <button
                   type="button"
-                  onClick={handleAnalyze}
+                  onClick={handleAnalyzeClick}
                   disabled={!file || isLoading}
                   aria-label="Analyze screenshot with Gemma 4 model"
                   className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-400 focus:outline-none ${
@@ -381,7 +239,7 @@ export default function Home() {
             blueprint={blueprint}
             screenshotFile={file}
             screenshotPreviewUrl={previewUrl}
-            onClear={handleClear}
+            onClear={handleClearAll}
           />
         )}
       </main>
