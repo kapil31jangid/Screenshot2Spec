@@ -46,3 +46,4 @@ export interface Specification {
   codingAssistantPrompt: string;
   assumptions: string[];
 }
+

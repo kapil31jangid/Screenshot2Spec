@@ -74,3 +74,4 @@ Respond with a SINGLE strictly valid JSON object (enclosed in \`\`\`json ... \`\
 
 Now analyze the screenshot thoroughly and generate the JSON analysis:`;
 }
+

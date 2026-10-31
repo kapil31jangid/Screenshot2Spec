@@ -102,3 +102,4 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
     throw new Error(`ANALYSIS_FAILED: ${errorMsg}`);
   }
 }
+

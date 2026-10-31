@@ -248,3 +248,4 @@ export function generateSpecification(analysis: AnalysisResponse): Specification
     assumptions: analysis.assumptions,
   };
 }
+

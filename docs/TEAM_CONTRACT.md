@@ -93,3 +93,4 @@ Screenshot2Spec converts UI screenshots into implementation-ready AI coding blue
 - `src/lib/mockAnalysis.ts`
 
 Any modifications to shared contracts must be reviewed and agreed upon by all members.
+

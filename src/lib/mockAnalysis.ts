@@ -104,3 +104,4 @@ export const mockDashboardAnalysis: AnalysisResponse = {
     'Data pagination or infinite scroll for recent orders table is inferred.',
   ],
 };
+

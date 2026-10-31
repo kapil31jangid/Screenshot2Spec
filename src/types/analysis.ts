@@ -43,3 +43,4 @@ export interface AnalyzeApiErrorResponse {
   error: string;
   details?: string | string[];
 }
+

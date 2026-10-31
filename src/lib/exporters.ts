@@ -109,3 +109,4 @@ export function exportComponentTreeJson(specification: Specification): string {
 export function exportTypeScriptInterfaces(specification: Specification): string {
   return specification.typescriptOutline;
 }
+
