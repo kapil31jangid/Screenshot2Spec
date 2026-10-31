@@ -60,56 +60,37 @@ export function useAnalysis() {
 
         setLoadingStep('Invoking Gemma 4 multimodal visual reasoning...');
 
-        let fetchedAnalysis: ValidatedAnalysis | null = null;
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData,
+          signal: abortController.signal,
+        });
 
-        try {
-          const response = await fetch('/api/analyze', {
-            method: 'POST',
-            body: formData,
-            signal: abortController.signal,
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data?.analysis) {
-              const parsed = analysisSchema.safeParse(data.analysis);
-              if (!parsed.success) {
-                const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
-                throw new Error(`API returned response violating shared schema: ${issues}`);
-              }
-              fetchedAnalysis = parsed.data;
-            } else {
-              throw new Error('API response missing "analysis" payload.');
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.analysis) {
+            const parsed = analysisSchema.safeParse(data.analysis);
+            if (!parsed.success) {
+              const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+              throw new Error(`API returned response violating shared schema: ${issues}`);
             }
-          } else if (response.status === 404) {
-            console.warn('POST /api/analyze returned 404. Using shared mock analysis.');
-            setLoadingStep('Backend route pending from Member 2 — using shared mock analysis...');
-            await new Promise((res) => setTimeout(res, 800));
-            fetchedAnalysis = mockDashboardAnalysis;
+
+            setLoadingStep('Constructing component hierarchy & matching curated libraries...');
+            const generatedBlueprint = generateDeveloperBlueprint(
+              parsed.data,
+              framework === 'nextjs-ts' ? 'React + TypeScript (Next.js App Router)' : framework,
+              styling === 'tailwind' ? 'Tailwind CSS' : styling,
+              instructions
+            );
+
+            setAnalysis(parsed.data);
+            setBlueprint(generatedBlueprint);
           } else {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Server responded with status ${response.status}`);
+            throw new Error('API response missing "analysis" payload.');
           }
-        } catch (fetchErr: unknown) {
-          if (fetchErr instanceof DOMException && fetchErr.name === 'AbortError') return;
-
-          console.warn('API fetch failed, falling back to shared mock analysis:', fetchErr);
-          setLoadingStep('Using shared mock analysis for testing interface...');
-          await new Promise((res) => setTimeout(res, 800));
-          fetchedAnalysis = mockDashboardAnalysis;
-        }
-
-        if (fetchedAnalysis) {
-          setLoadingStep('Constructing component hierarchy & matching curated libraries...');
-          const generatedBlueprint = generateDeveloperBlueprint(
-            fetchedAnalysis,
-            framework === 'nextjs-ts' ? 'React + TypeScript (Next.js App Router)' : framework,
-            styling === 'tailwind' ? 'Tailwind CSS' : styling,
-            instructions
-          );
-
-          setAnalysis(fetchedAnalysis);
-          setBlueprint(generatedBlueprint);
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server responded with status ${response.status}`);
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -166,4 +147,3 @@ export function useAnalysis() {
     reset,
   };
 }
-

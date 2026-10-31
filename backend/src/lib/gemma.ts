@@ -1,4 +1,34 @@
 import { GoogleGenAI } from '@google/genai';
+import fs from 'fs';
+import path from 'path';
+
+function ensureEnvLoaded() {
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_api_key_here') return;
+  const candidates = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '.env.local'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../../../.env'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      try {
+        const lines = fs.readFileSync(p, 'utf8').split(/\r?\n/);
+        for (const l of lines) {
+          const trimmed = l.trim();
+          if (trimmed && !trimmed.startsWith('#')) {
+            const idx = trimmed.indexOf('=');
+            if (idx !== -1) {
+              const k = trimmed.slice(0, idx).trim();
+              const v = trimmed.slice(idx + 1).trim();
+              if (!process.env[k]) process.env[k] = v;
+            }
+          }
+        }
+      } catch {}
+    }
+  }
+}
 
 export interface GemmaAnalysisRequest {
   imageBuffer: Buffer;
@@ -39,6 +69,7 @@ export function extractCleanJson(rawText: string): string {
  * Executes a multimodal analysis call to Gemma 4 via Google GenAI SDK with timeout.
  */
 export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promise<GemmaCallResult> {
+  ensureEnvLoaded();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === '' || apiKey === 'your_api_key_here') {
     throw new Error('MISSING_API_KEY: GEMINI_API_KEY is not configured on the server. Please set GEMINI_API_KEY in your environment or .env.local.');
