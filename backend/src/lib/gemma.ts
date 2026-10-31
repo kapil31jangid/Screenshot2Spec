@@ -43,7 +43,7 @@ export interface GemmaCallResult {
   modelUsed: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 45000; // 45 seconds
+const DEFAULT_TIMEOUT_MS = 120000; // 120 seconds — real screenshots take 30-90s on Google AI Studio
 
 /**
  * Strips outer markdown code block fences (e.g. ```json ... ```)

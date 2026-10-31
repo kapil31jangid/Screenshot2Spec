@@ -60,11 +60,23 @@ export function useAnalysis() {
 
         setLoadingStep('Invoking Gemma 4 multimodal visual reasoning...');
 
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          body: formData,
-          signal: abortController.signal,
-        });
+        // Use a combined abort signal: user cancel OR 130s hard timeout
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => timeoutController.abort(), 130000);
+        const combinedSignal = AbortSignal.any
+          ? AbortSignal.any([abortController.signal, timeoutController.signal])
+          : abortController.signal;
+
+        let response: Response;
+        try {
+          response = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData,
+            signal: combinedSignal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (response.ok) {
           const data = await response.json();
