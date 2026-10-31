@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, Image as ImageIcon, X, AlertCircle, FileText, RefreshCw } from 'lucide-react';
+import {
+  UploadCloud,
+  ImageIcon,
+  X,
+  AlertCircle,
+  FileCode,
+  RefreshCw,
+  ClipboardPaste,
+  Sparkles,
+} from 'lucide-react';
 
 interface ScreenshotUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -9,6 +18,7 @@ interface ScreenshotUploadProps {
   error: string | null;
   onError: (err: string | null) => void;
   disabled?: boolean;
+  onLoadSample?: () => void;
 }
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB limit
@@ -21,10 +31,13 @@ export default function ScreenshotUpload({
   error,
   onError,
   disabled = false,
+  onLoadSample,
 }: ScreenshotUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageMeta, setImageMeta] = useState<{ width: number; height: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropzoneRef = useRef<HTMLDivElement>(null);
 
   // Sync preview URL and cleanup on unmount or file reset
   useEffect(() => {
@@ -33,11 +46,19 @@ export default function ScreenshotUpload({
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
       }
+      setImageMeta(null);
       return;
     }
 
     const objectUrl = URL.createObjectURL(selectedFile);
     setPreviewUrl(objectUrl);
+
+    // Read image dimensions
+    const img = new Image();
+    img.onload = () => {
+      setImageMeta({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.src = objectUrl;
 
     return () => {
       URL.revokeObjectURL(objectUrl);
@@ -81,6 +102,34 @@ export default function ScreenshotUpload({
     },
     [onError, onFileSelect]
   );
+
+  // Global window paste listener for Ctrl+V / Cmd+V
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (disabled) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            const renamed = new File(
+              [file],
+              `clipboard-${Date.now()}.${file.type.split('/')[1] || 'png'}`,
+              { type: file.type }
+            );
+            validateAndSetFile(renamed);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [disabled, validateAndSetFile]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -155,66 +204,84 @@ export default function ScreenshotUpload({
         disabled={disabled}
       />
 
-      {/* Upload Box / Preview Area */}
+      {/* Upload Dropzone */}
       {!selectedFile ? (
         <div
+          ref={dropzoneRef}
           role="button"
           tabIndex={disabled ? -1 : 0}
-          aria-label="Upload screenshot by clicking or dragging and dropping an image"
+          aria-label="Drop screenshot here, click to browse, or paste with Ctrl+V"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleTriggerUpload}
           onKeyDown={handleKeyDown}
-          className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[260px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+          className={`relative group cursor-pointer border border-dashed rounded-xl p-8 sm:p-10 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[220px] bg-zinc-900/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 ${
             isDragging
-              ? 'border-indigo-500 bg-indigo-950/20 shadow-lg shadow-indigo-500/10'
-              : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
+              ? 'border-zinc-400 bg-zinc-900/80 ring-1 ring-zinc-400'
+              : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform mb-4 shadow-inner">
-            <Upload className="w-8 h-8" aria-hidden="true" />
+          {/* Subtle blueprint corner indicators */}
+          <div className="absolute top-2.5 left-2.5 w-2 h-2 border-t border-l border-zinc-700/60" />
+          <div className="absolute top-2.5 right-2.5 w-2 h-2 border-t border-r border-zinc-700/60" />
+          <div className="absolute bottom-2.5 left-2.5 w-2 h-2 border-b border-l border-zinc-700/60" />
+          <div className="absolute bottom-2.5 right-2.5 w-2 h-2 border-b border-r border-zinc-700/60" />
+
+          <div className="w-11 h-11 rounded-lg bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-300 mb-3.5 group-hover:scale-105 transition-transform shadow-sm">
+            <UploadCloud className="w-5 h-5" aria-hidden="true" />
           </div>
 
-          <h4 className="text-base sm:text-lg font-semibold text-slate-200 mb-1">
-            Drag & drop your screenshot here
-          </h4>
-          <p className="text-xs sm:text-sm text-slate-400 mb-4 max-w-sm">
-            or press Enter / click to browse. Supports PNG, JPEG, and WebP (up to 5 MB).
+          <h3 className="text-sm font-medium text-zinc-200 mb-1">
+            Drop UI screenshot, or click to browse
+          </h3>
+          <p className="text-xs text-zinc-500 mb-4 max-w-sm">
+            You can also press <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px]">Ctrl+V</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px]">⌘V</kbd> anywhere to paste directly.
           </p>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
-            <ImageIcon className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-            <span>Dashboard, Landing Page, Forms, or App UI</span>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-mono text-zinc-500">
+            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">PNG</span>
+            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">JPEG</span>
+            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800">WebP</span>
+            <span className="text-zinc-600">•</span>
+            <span>Max 5 MB</span>
           </div>
         </div>
       ) : (
-        <div className="relative border border-slate-800 bg-slate-900/60 rounded-2xl p-4 sm:p-6 transition-all">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+        /* Image Preview Workbench Card */
+        <div className="relative border border-zinc-800 bg-zinc-900/40 rounded-xl p-4 sm:p-5 transition-all">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                <FileText className="w-5 h-5" aria-hidden="true" />
+              <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 shrink-0">
+                <FileCode className="w-4 h-4" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-200 truncate max-w-xs sm:max-w-md">
+                <p className="text-sm font-medium text-zinc-200 truncate max-w-xs sm:max-w-md">
                   {selectedFile.name}
                 </p>
-                <p className="text-xs text-slate-400">
-                  {formatFileSize(selectedFile.size)} • {selectedFile.type || 'image'}
-                </p>
+                <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 mt-0.5">
+                  <span>{formatFileSize(selectedFile.size)}</span>
+                  {imageMeta && (
+                    <>
+                      <span>•</span>
+                      <span>{imageMeta.width} × {imageMeta.height} px</span>
+                    </>
+                  )}
+                  <span>•</span>
+                  <span className="uppercase">{selectedFile.type.split('/')[1] || 'image'}</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center gap-1.5 self-end sm:self-auto">
               <button
                 type="button"
                 onClick={handleTriggerUpload}
                 disabled={disabled}
-                aria-label="Replace screenshot image"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
-                title="Replace image"
+                aria-label="Replace screenshot"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-md border border-zinc-700 transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-zinc-400 focus:outline-none"
               >
-                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+                <RefreshCw className="w-3 h-3" aria-hidden="true" />
                 <span>Replace</span>
               </button>
               <button
@@ -222,23 +289,22 @@ export default function ScreenshotUpload({
                 onClick={handleRemove}
                 disabled={disabled}
                 aria-label="Remove selected screenshot"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 bg-rose-950/30 hover:bg-rose-900/50 hover:text-rose-300 rounded-lg border border-rose-800/40 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-500 focus:outline-none"
-                title="Remove image"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-400 hover:text-red-400 bg-zinc-900 hover:bg-red-950/30 rounded-md border border-zinc-800 hover:border-red-900/50 transition-colors disabled:opacity-50 focus-visible:ring-1 focus-visible:ring-red-500 focus:outline-none"
               >
-                <X className="w-3.5 h-3.5" aria-hidden="true" />
+                <X className="w-3 h-3" aria-hidden="true" />
                 <span>Remove</span>
               </button>
             </div>
           </div>
 
-          {/* Image Preview Container */}
+          {/* Image Display */}
           {previewUrl && (
-            <div className="mt-4 relative rounded-xl overflow-hidden bg-slate-950/80 border border-slate-800/80 max-h-96 flex items-center justify-center p-2">
+            <div className="mt-3 relative rounded-lg overflow-hidden bg-black/60 border border-zinc-800 flex items-center justify-center p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
-                alt={`Preview of uploaded screenshot: ${selectedFile.name}`}
-                className="max-h-80 w-auto object-contain rounded-lg shadow-md"
+                alt={`Uploaded UI screenshot: ${selectedFile.name}`}
+                className="max-h-72 w-auto object-contain rounded border border-zinc-800/80 shadow-lg"
               />
             </div>
           )}
@@ -250,9 +316,9 @@ export default function ScreenshotUpload({
         <div
           role="alert"
           aria-live="assertive"
-          className="flex items-center gap-2 p-3 bg-rose-950/40 border border-rose-800/50 rounded-xl text-xs sm:text-sm text-rose-300 animate-fadeIn"
+          className="flex items-center gap-2 p-3 bg-red-950/30 border border-red-900/60 rounded-lg text-xs text-red-300"
         >
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" aria-hidden="true" />
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-400" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}

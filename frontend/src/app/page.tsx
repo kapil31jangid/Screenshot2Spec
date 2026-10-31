@@ -1,29 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ScreenshotUpload from '@/components/ScreenshotUpload';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import ResultsDashboard from '@/components/ResultsDashboard';
 import { useScreenshot } from '@/hooks/useScreenshot';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import {
-  Sparkles,
-  ArrowRight,
+  Code2,
+  Terminal,
   Layers,
   Cpu,
   ShieldCheck,
-  Code2,
   AlertCircle,
   Loader2,
+  ArrowRight,
+  Github,
+  PlayCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function Home() {
-  // Preferences state
   const [framework, setFramework] = useState('nextjs-ts');
   const [styling, setStyling] = useState('tailwind');
   const [instructions, setInstructions] = useState('');
 
-  // Screenshot upload hook
   const {
     file,
     previewUrl,
@@ -33,7 +34,6 @@ export default function Home() {
     clearFile,
   } = useScreenshot();
 
-  // Analysis and blueprint hook
   const {
     analysis,
     blueprint,
@@ -47,7 +47,7 @@ export default function Home() {
 
   const handleAnalyzeClick = async () => {
     if (!file) {
-      setUploadError('Please upload a user interface screenshot before analyzing.');
+      setUploadError('Please select or paste a screenshot before generating a specification.');
       return;
     }
 
@@ -64,105 +64,131 @@ export default function Home() {
     setInstructions('');
   };
 
+  // Keyboard shortcut: Cmd/Ctrl + Enter to trigger analysis
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (file && !isLoading && !analysis) {
+          e.preventDefault();
+          handleAnalyzeClick();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [file, isLoading, analysis, framework, styling, instructions]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500/30">
-      {/* Top Navigation Bar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 selection:bg-zinc-800">
+      {/* Top Engineering Header */}
+      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-              <Code2 className="w-5 h-5" aria-hidden="true" />
+            <div className="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-200 shadow-sm">
+              <Code2 className="w-4 h-4" aria-hidden="true" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-base tracking-tight text-white">
-                  Screenshot2Spec
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 font-semibold">
-                  Gemma 4 Hackathon
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                See It. Specify It. Build It.
-              </p>
+            <div className="flex items-center gap-2.5">
+              <span className="font-semibold text-sm tracking-tight text-white">
+                Screenshot2Spec
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                gemma-4-26b-a4b-it
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {!analysis && (
               <button
                 type="button"
                 onClick={loadDemo}
                 aria-label="Load demo analytics dashboard"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded-md border border-zinc-800 transition-colors focus-visible:ring-1 focus-visible:ring-zinc-400 focus:outline-none"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
-                <span>Load Sample Dashboard</span>
+                <PlayCircle className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+                <span>Load Sample UI</span>
               </button>
             )}
-            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 font-mono">
-              v1.0 MVP
-            </span>
+
+            <a
+              href="https://github.com/kapil31jangid/Screenshot2Spec"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View repository on GitHub"
+              className="p-1.5 text-zinc-400 hover:text-white rounded-md hover:bg-zinc-900 transition-colors"
+              title="GitHub Repository"
+            >
+              <Github className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {!analysis || !blueprint ? (
-          <div className="space-y-10 max-w-4xl mx-auto">
-            {/* Hero Section */}
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/50 text-xs font-semibold text-indigo-300">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-                <span>AI-Powered Frontend Blueprint Generator</span>
+          <div className="space-y-8 max-w-3xl mx-auto">
+            {/* Minimal Technical Hero */}
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-400">
+                <Terminal className="w-3 h-3 text-zinc-400" />
+                <span>Multimodal Vision → Production Blueprint Engine</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-400 tracking-tight leading-tight">
-                See It. Specify It. Build It.
+              <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-white leading-tight">
+                From UI Screenshot to Developer Blueprint
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Transform any website or application screenshot into an implementation-ready frontend architecture, verified library recommendations, and library-aware AI coding prompts using Google Gemma 4.
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                Deconstruct any web interface into component hierarchies, Tailwind styles, TypeScript prop contracts, and library-aware AI coding prompts using Google Gemma 4.
               </p>
 
-              {/* Value proposition badges */}
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-                  <span>Gemma 4 Multimodal Reasoning</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <Layers className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" />
-                  <span>Recursive Component Tree</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                  <span>Curated Library Catalog</span>
-                </div>
+              {/* Technical Capabilities Pill Bar */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-mono text-zinc-400">
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900/60 border border-zinc-800/80">
+                  <Cpu className="w-3 h-3 text-zinc-500" />
+                  Gemma 4 Vision
+                </span>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900/60 border border-zinc-800/80">
+                  <Layers className="w-3 h-3 text-zinc-500" />
+                  Recursive Tree
+                </span>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900/60 border border-zinc-800/80">
+                  <ShieldCheck className="w-3 h-3 text-zinc-500" />
+                  Strict Zod Validation
+                </span>
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900/60 border border-zinc-800/80">
+                  <Code2 className="w-3 h-3 text-zinc-500" />
+                  15-Section AI Prompt
+                </span>
               </div>
             </div>
 
-            {/* Upload & Configuration Form */}
-            <div className="space-y-6 bg-slate-900/20 p-6 sm:p-8 rounded-3xl border border-slate-800/80 shadow-2xl backdrop-blur-sm">
+            {/* Workbench Form Card */}
+            <div className="border border-zinc-800 bg-zinc-900/20 rounded-2xl p-5 sm:p-7 space-y-6 shadow-xl backdrop-blur-sm">
               <div className="space-y-2">
-                <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold" aria-hidden="true">1</span>
-                  <span>Upload Screenshot</span>
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+                    1. Screenshot Input
+                  </h2>
+                  <span className="text-[11px] text-zinc-500">
+                    Paste with Ctrl+V / ⌘V or drag file
+                  </span>
+                </div>
                 <ScreenshotUpload
                   onFileSelect={selectFile}
                   selectedFile={file}
                   error={uploadError}
                   onError={setUploadError}
                   disabled={isLoading}
+                  onLoadSample={loadDemo}
                 />
               </div>
 
-              <div className="space-y-2 pt-4">
-                <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold" aria-hidden="true">2</span>
-                  <span>Configure Preferences</span>
+              <div className="space-y-2 pt-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+                  2. Blueprint Parameters
                 </h2>
                 <ConfigurationPanel
                   framework={framework}
@@ -180,54 +206,59 @@ export default function Home() {
                 <div
                   role="alert"
                   aria-live="assertive"
-                  className="flex items-center gap-2 p-4 bg-rose-950/50 border border-rose-800/60 rounded-2xl text-xs sm:text-sm text-rose-300"
+                  className="flex items-start gap-2.5 p-3.5 bg-red-950/40 border border-red-900/60 rounded-xl text-xs text-red-300"
                 >
-                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" aria-hidden="true" />
-                  <span>{apiError}</span>
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" aria-hidden="true" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-red-200">Analysis Request Failed</p>
+                    <p className="leading-relaxed opacity-90">{apiError}</p>
+                  </div>
                 </div>
               )}
 
               {/* Action Button & Loading Status */}
-              <div className="pt-4 flex flex-col items-center gap-3">
+              <div className="pt-2 flex flex-col items-center gap-3">
                 <button
                   type="button"
                   onClick={handleAnalyzeClick}
                   disabled={!file || isLoading}
                   aria-label="Analyze screenshot with Gemma 4 model"
-                  className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-400 focus:outline-none ${
+                  className={`w-full sm:w-auto min-w-[240px] px-6 py-2.5 rounded-lg font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all focus-visible:ring-1 focus-visible:ring-zinc-400 focus:outline-none shadow-sm ${
                     !file || isLoading
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
-                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.01]'
+                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
+                      : 'bg-white text-zinc-950 hover:bg-zinc-200 hover:shadow active:scale-[0.99]'
                   }`}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                      <span>Generating Blueprint...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-zinc-400" aria-hidden="true" />
+                      <span>Synthesizing Blueprint...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5" aria-hidden="true" />
-                      <span>Analyze Screenshot with Gemma 4</span>
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      <span>Generate Specification</span>
+                      <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700 text-[10px] font-mono font-semibold">
+                        ⌘⏎
+                      </kbd>
+                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                     </>
                   )}
                 </button>
 
                 {isLoading && (
-                  <p
+                  <div
                     role="status"
                     aria-live="polite"
-                    className="text-xs text-indigo-400 animate-pulse font-mono flex items-center gap-1.5"
+                    className="text-xs font-mono text-zinc-400 flex items-center gap-2 py-1 px-3 rounded-full bg-zinc-900 border border-zinc-800"
                   >
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" aria-hidden="true" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" aria-hidden="true" />
                     <span>{loadingStep}</span>
-                  </p>
+                  </div>
                 )}
 
                 {!file && !isLoading && (
-                  <p className="text-xs text-slate-500">
-                    Upload a PNG, JPEG, or WebP screenshot (max 5 MB) to start analysis.
+                  <p className="text-[11px] font-mono text-zinc-500">
+                    Select or paste a screenshot, or click &ldquo;Load Sample UI&rdquo; above.
                   </p>
                 )}
               </div>
@@ -244,17 +275,27 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950/60 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      {/* Clean Technical Footer */}
+      <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-5 mt-auto">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-400">Screenshot2Spec</span>
+            <span className="font-medium text-zinc-400">Screenshot2Spec</span>
             <span>—</span>
-            <span>Gemma 4 Developer Productivity Hackathon Project</span>
+            <span>Open Source (MIT) · Powered by Google Gemma 4</span>
           </div>
-          <div>
-            <span>Built by Member 1 (Frontend & UX) on branch </span>
-            <code className="text-indigo-400 font-mono">feature/frontend</code>
+          <div className="flex items-center gap-4 text-zinc-400">
+            <a
+              href="https://github.com/kapil31jangid/Screenshot2Spec"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              GitHub
+            </a>
+            <span>•</span>
+            <span className="font-mono text-zinc-500 text-[11px]">
+              models/gemma-4-26b-a4b-it
+            </span>
           </div>
         </div>
       </footer>

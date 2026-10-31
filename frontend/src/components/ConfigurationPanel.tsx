@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sliders, CheckCircle2, AlertCircle, FileCode2, Palette, MessageSquare } from 'lucide-react';
+import { Sliders, Code2, Palette, Terminal, Sparkles } from 'lucide-react';
 
 interface ConfigurationPanelProps {
   framework: string;
@@ -13,6 +13,13 @@ interface ConfigurationPanelProps {
   disabled?: boolean;
 }
 
+const PRESET_HINTS = [
+  'Use modern dark slate color palette',
+  'Mobile-first responsive drawer navigation',
+  'Emphasize accessibility (WCAG AA) & ARIA roles',
+  'Include realistic mock data records',
+];
+
 export default function ConfigurationPanel({
   framework,
   onFrameworkChange,
@@ -22,160 +29,82 @@ export default function ConfigurationPanel({
   onInstructionsChange,
   disabled = false,
 }: ConfigurationPanelProps) {
-  const frameworks = [
-    {
-      id: 'nextjs-ts',
-      label: 'React + TypeScript (Next.js App Router)',
-      supported: true,
-      badge: 'Supported MVP',
-    },
-    {
-      id: 'vite-react',
-      label: 'React + TypeScript (Vite SPA)',
-      supported: false,
-      badge: 'Coming Soon',
-    },
-    {
-      id: 'vue-ts',
-      label: 'Vue 3 + TypeScript (Nuxt)',
-      supported: false,
-      badge: 'Coming Soon',
-    },
-  ];
-
-  const stylingOptions = [
-    {
-      id: 'tailwind',
-      label: 'Tailwind CSS',
-      supported: true,
-      badge: 'Default',
-    },
-    {
-      id: 'css-modules',
-      label: 'CSS Modules',
-      supported: false,
-      badge: 'Coming Soon',
-    },
-    {
-      id: 'styled-components',
-      label: 'Styled Components',
-      supported: false,
-      badge: 'Coming Soon',
-    },
-  ];
+  const handleAddPreset = (hint: string) => {
+    if (disabled) return;
+    if (instructions.includes(hint)) return;
+    const updated = instructions.trim()
+      ? `${instructions.trim()}, ${hint.toLowerCase()}`
+      : hint;
+    onInstructionsChange(updated.slice(0, 500));
+  };
 
   return (
-    <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 sm:p-6 space-y-6">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-800/80">
-        <Sliders className="w-4 h-4 text-indigo-400" />
-        <h3 className="text-sm font-semibold text-slate-200">
-          Blueprint Configuration
-        </h3>
-        <span className="text-xs text-slate-500 ml-auto">Target Stack</span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Framework Selector */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-300">
-            <FileCode2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Target Frontend Framework</span>
-          </label>
-          <div className="space-y-2">
-            {frameworks.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                disabled={!f.supported || disabled}
-                onClick={() => f.supported && onFrameworkChange(f.id)}
-                className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs flex items-center justify-between transition-all ${
-                  framework === f.id
-                    ? 'border-indigo-500 bg-indigo-950/30 text-indigo-200 ring-1 ring-indigo-500/30 font-medium'
-                    : f.supported
-                    ? 'border-slate-800 bg-slate-950/40 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                    : 'border-slate-800/40 bg-slate-950/20 text-slate-600 cursor-not-allowed opacity-60'
-                }`}
-              >
-                <span>{f.label}</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    f.supported
-                      ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800/40'
-                      : 'bg-slate-800 text-slate-500 border border-slate-700/40'
-                  }`}
-                >
-                  {f.badge}
-                </span>
-              </button>
-            ))}
-          </div>
+    <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-4 sm:p-5 space-y-4">
+      {/* Target Stack Specification */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/80">
+        <div className="flex items-center gap-2">
+          <Sliders className="w-3.5 h-3.5 text-zinc-400" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
+            Target Environment
+          </span>
         </div>
 
-        {/* Styling Selector */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-300">
-            <Palette className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Styling Solution</span>
-          </label>
-          <div className="space-y-2">
-            {stylingOptions.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                disabled={!s.supported || disabled}
-                onClick={() => s.supported && onStylingChange(s.id)}
-                className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs flex items-center justify-between transition-all ${
-                  styling === s.id
-                    ? 'border-indigo-500 bg-indigo-950/30 text-indigo-200 ring-1 ring-indigo-500/30 font-medium'
-                    : s.supported
-                    ? 'border-slate-800 bg-slate-950/40 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                    : 'border-slate-800/40 bg-slate-950/20 text-slate-600 cursor-not-allowed opacity-60'
-                }`}
-              >
-                <span>{s.label}</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    s.supported
-                      ? 'bg-indigo-950/50 text-indigo-400 border border-indigo-800/40'
-                      : 'bg-slate-800 text-slate-500 border border-slate-700/40'
-                  }`}
-                >
-                  {s.badge}
-                </span>
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-zinc-200">
+            <Code2 className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Next.js 15 (App Router · React 19)</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-zinc-200">
+            <Palette className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Tailwind CSS</span>
           </div>
         </div>
       </div>
 
-      {/* Optional Development Instructions */}
-      <div className="space-y-2 pt-2 border-t border-slate-800/80">
+      {/* Optional Prompt Constraints */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label
             htmlFor="instructions-input"
-            className="flex items-center gap-2 text-xs font-medium text-slate-300"
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-300"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Optional Implementation Notes / Constraints</span>
+            <Terminal className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Implementation Constraints / Context (Optional)</span>
           </label>
-          <span className="text-[11px] text-slate-500">
-            {instructions.length} / 500 characters
+          <span className="text-[11px] font-mono text-zinc-500">
+            {instructions.length} / 500
           </span>
         </div>
+
         <textarea
           id="instructions-input"
           value={instructions}
           onChange={(e) => onInstructionsChange(e.target.value.slice(0, 500))}
-          placeholder="E.g., Emphasize mobile-first drawer navigation, use dark slate color palette, assume mock data for table records, prioritize accessibility tags..."
-          rows={3}
+          placeholder="e.g. Prioritize mobile responsive drawer, use slate background, generate typed mock chart series..."
+          rows={2}
           disabled={disabled}
-          className="w-full text-xs sm:text-sm bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none disabled:opacity-50"
+          className="w-full text-xs bg-zinc-950/70 border border-zinc-800 rounded-lg p-3 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all resize-none disabled:opacity-50 font-mono leading-relaxed"
         />
-        <p className="text-[11px] text-slate-500">
-          These instructions are passed directly into the Gemma 4 multimodal reasoning prompt to tailor your blueprint.
-        </p>
+
+        {/* Quick Suggestion Chips */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-mono mr-1">
+            Quick additions:
+          </span>
+          {PRESET_HINTS.map((hint, i) => (
+            <button
+              key={i}
+              type="button"
+              disabled={disabled || instructions.includes(hint)}
+              onClick={() => handleAddPreset(hint)}
+              className="text-[11px] px-2 py-0.5 rounded bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 border border-zinc-700/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + {hint}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-
