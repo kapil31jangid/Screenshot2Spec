@@ -1,0 +1,23 @@
+{
+  "name": "screenshot2spec-backend",
+  "version": "0.1.0",
+  "description": "Screenshot2Spec Gemma 4 Multimodal Analysis & Specification Engine",
+  "private": true,
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "test": "node --test --import tsx tests/backend.test.ts tests/route.test.ts",
+    "test:live": "tsx --test tests/live-integration.test.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^0.1.1",
+    "next": "^16.4.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.3",
+    "typescript": "^5"
+  }
+}

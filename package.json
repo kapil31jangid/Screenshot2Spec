@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test --import tsx tests/backend.test.ts tests/route.test.ts",
-    "test:live": "node --test --import tsx tests/live-integration.test.ts"
+    "test:live": "node --test --import tsx tests/live-integration.test.ts",
+    "backend:dev": "tsx watch backend/src/server.ts",
+    "backend:start": "tsx backend/src/server.ts",
+    "backend:test": "node --test --import tsx backend/tests/backend.test.ts backend/tests/route.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
