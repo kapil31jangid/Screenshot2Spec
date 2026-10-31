@@ -5,6 +5,7 @@
   "private": true,
   "main": "src/server.ts",
   "scripts": {
+    "build": "tsc --noEmit",
     "start": "tsx src/server.ts",
     "dev": "tsx watch src/server.ts",
     "test": "node --test --import tsx tests/backend.test.ts tests/route.test.ts",
