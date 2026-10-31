@@ -124,14 +124,14 @@ export default function ExportActions({ analysis, blueprint }: ExportActionsProp
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+      <div className="flex items-center justify-between pb-3 border-b border-[#CBD6C9]/60">
         <div className="flex items-center gap-2">
-          <Download className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-slate-200">
+          <Download className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-[#14370D]">
             Developer Blueprint Artifacts
           </h3>
         </div>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-[#52624F]">
           5 Exportable Files
         </span>
       </div>
@@ -147,31 +147,31 @@ export default function ExportActions({ analysis, blueprint }: ExportActionsProp
               type="button"
               onClick={item.handler}
               aria-label={`Download ${item.title}`}
-              className="text-left border border-slate-800/80 bg-slate-900/50 hover:bg-slate-900 hover:border-slate-700/80 p-4 rounded-xl transition-all flex flex-col justify-between group focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+              className="text-left border border-[#CBD6C9] bg-white hover:bg-[#F4F6F2] hover:border-[#738E6D] p-4 rounded-xl transition-all flex flex-col justify-between group focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none shadow-sm"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-[#FEF3B5] border border-[#E5CE82] flex items-center justify-center text-[#14370D] group-hover:scale-105 transition-transform">
                     <Icon className="w-4 h-4" aria-hidden="true" />
                   </div>
-                  <span className="text-xs text-slate-500 group-hover:text-indigo-400 transition-colors flex items-center gap-1">
+                  <span className="text-xs text-[#52624F] group-hover:text-[#14370D] transition-colors flex items-center gap-1">
                     {isDone ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                        <span className="text-emerald-400 font-medium">Downloaded</span>
+                        <Check className="w-3.5 h-3.5 text-[#14370D]" aria-hidden="true" />
+                        <span className="text-[#14370D] font-medium">Downloaded</span>
                       </>
                     ) : (
                       <>
-                        <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                        <Download className="w-3.5 h-3.5 text-[#738E6D]" aria-hidden="true" />
                         <span>Export</span>
                       </>
                     )}
                   </span>
                 </div>
-                <h4 className="font-mono text-xs font-semibold text-slate-200 truncate">
+                <h4 className="font-mono text-xs font-semibold text-[#14370D] truncate">
                   {item.title}
                 </h4>
-                <p className="text-[11px] text-slate-400 mt-1 leading-normal">
+                <p className="text-[11px] text-[#52624F] mt-1 leading-normal">
                   {item.desc}
                 </p>
               </div>

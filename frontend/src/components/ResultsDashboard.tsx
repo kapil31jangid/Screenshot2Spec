@@ -80,17 +80,17 @@ export default function ResultsDashboard({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top Banner with Summary & Clear Button */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-[#CBD6C9] shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 text-xs font-semibold tracking-wide uppercase">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FEF3B5] text-[#14370D] border border-[#E5CE82] text-xs font-semibold tracking-wide uppercase">
               Analysis Verified
             </span>
-            <span className="text-xs text-slate-400">
-              Page Type: <strong className="text-slate-200 capitalize">{analysis.pageType}</strong>
+            <span className="text-xs text-[#52624F]">
+              Page Type: <strong className="text-[#1C2B1B] capitalize">{analysis.pageType}</strong>
             </span>
           </div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-100">
+          <h2 className="text-base sm:text-lg font-bold text-[#14370D]">
             {analysis.summary}
           </h2>
         </div>
@@ -99,20 +99,20 @@ export default function ResultsDashboard({
           type="button"
           onClick={onClear}
           aria-label="Analyze new screenshot and reset current results"
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700 transition-colors self-start md:self-auto shrink-0 shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#1C2B1B] hover:text-[#14370D] bg-white hover:bg-[#F4F6F2] rounded-xl border border-[#CBD6C9] transition-colors self-start md:self-auto shrink-0 shadow-xs focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none"
         >
-          <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+          <RotateCcw className="w-3.5 h-3.5 text-[#738E6D]" aria-hidden="true" />
           <span>Analyze New Screenshot</span>
         </button>
       </div>
 
       {/* Reference Screenshot Banner (Persists during results review) */}
       {screenshotPreviewUrl && (
-        <div className="border border-slate-800 bg-slate-900/30 rounded-2xl p-4 transition-all">
+        <div className="border border-[#CBD6C9] bg-white rounded-2xl p-4 shadow-sm transition-all">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-              <h3 className="text-xs font-semibold text-slate-300">
+              <ImageIcon className="w-4 h-4 text-[#738E6D]" aria-hidden="true" />
+              <h3 className="text-xs font-semibold text-[#14370D]">
                 Reference Screenshot ({screenshotFile?.name || 'Uploaded reference'})
               </h3>
             </div>
@@ -121,7 +121,7 @@ export default function ResultsDashboard({
               onClick={() => setShowScreenshotReference(!showScreenshotReference)}
               aria-expanded={showScreenshotReference}
               aria-label={showScreenshotReference ? 'Hide reference screenshot' : 'Show reference screenshot'}
-              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded px-2 py-1"
+              className="inline-flex items-center gap-1 text-xs text-[#52624F] hover:text-[#1C2B1B] focus-visible:ring-2 focus-visible:ring-[#14370D] rounded px-2 py-1"
             >
               <span>{showScreenshotReference ? 'Collapse' : 'Expand'}</span>
               {showScreenshotReference ? (
@@ -133,7 +133,7 @@ export default function ResultsDashboard({
           </div>
 
           {showScreenshotReference && (
-            <div className="mt-3 max-h-64 overflow-hidden rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center p-2">
+            <div className="mt-3 max-h-64 overflow-hidden rounded-xl bg-[#FAF9F1] border border-[#CBD6C9] flex items-center justify-center p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={screenshotPreviewUrl}
@@ -149,7 +149,7 @@ export default function ResultsDashboard({
       <div
         role="tablist"
         aria-label="Blueprint result sections"
-        className="border-b border-slate-800 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none"
+        className="border-b border-[#CBD6C9] flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -165,20 +165,20 @@ export default function ResultsDashboard({
               tabIndex={isActive ? 0 : -1}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none ${
                 isActive
-                  ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                  ? 'bg-[#14370D] text-white shadow-xs'
+                  : 'text-[#52624F] hover:text-[#1C2B1B] hover:bg-[#E9EFE8]/50'
               }`}
             >
               <Icon className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-medium ${
                     isActive
-                      ? 'bg-indigo-500/30 text-indigo-200'
-                      : 'bg-slate-800 text-slate-400'
+                      ? 'bg-[#FEF3B5] text-[#14370D]'
+                      : 'bg-[#E9EFE8] text-[#52624F]'
                   }`}
                 >
                   {tab.badge}
@@ -201,10 +201,10 @@ export default function ResultsDashboard({
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Layout Regions */}
-            <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
+            <div className="border border-[#CBD6C9] bg-white rounded-2xl p-5 space-y-3 shadow-sm">
               <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-slate-200">
+                <LayoutDashboard className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[#14370D]">
                   Detected Layout Structure
                 </h3>
               </div>
@@ -212,9 +212,9 @@ export default function ResultsDashboard({
                 {analysis.layout.map((region, idx) => (
                   <div
                     key={idx}
-                    className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-medium flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-[#FAF9F1] border border-[#CBD6C9] text-xs text-[#1C2B1B] font-medium flex items-center gap-1.5"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" aria-hidden="true" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#738E6D]" aria-hidden="true" />
                     <span>{region}</span>
                   </div>
                 ))}
@@ -222,25 +222,25 @@ export default function ResultsDashboard({
             </div>
 
             {/* Design System Summary */}
-            <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-4">
+            <div className="border border-[#CBD6C9] bg-white rounded-2xl p-5 space-y-4 shadow-sm">
               <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-slate-200">
+                <Palette className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[#14370D]">
                   Design System Observations
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Colors */}
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                  <span className="text-xs font-semibold text-slate-300 block">
+                <div className="bg-[#FAF9F1] p-4 rounded-xl border border-[#CBD6C9]/80 space-y-2">
+                  <span className="text-xs font-semibold text-[#14370D] block">
                     Observed Color Palette
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {analysis.design.colors.map((c, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-300">
+                      <div key={idx} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-[#CBD6C9] text-[11px] font-mono text-[#1C2B1B]">
                         <span
-                          className="w-3.5 h-3.5 rounded-md border border-white/20 shrink-0"
+                          className="w-3.5 h-3.5 rounded-md border border-black/10 shrink-0"
                           style={{ backgroundColor: c }}
                           aria-hidden="true"
                         />
@@ -251,14 +251,14 @@ export default function ResultsDashboard({
                 </div>
 
                 {/* Typography */}
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                  <span className="text-xs font-semibold text-slate-300 block">
+                <div className="bg-[#FAF9F1] p-4 rounded-xl border border-[#CBD6C9]/80 space-y-2">
+                  <span className="text-xs font-semibold text-[#14370D] block">
                     Typography Hierarchy
                   </span>
-                  <ul className="space-y-1 text-xs text-slate-400">
+                  <ul className="space-y-1 text-xs text-[#52624F]">
                     {analysis.design.typography.map((t, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-400" aria-hidden="true">•</span>
+                        <span className="text-[#738E6D]" aria-hidden="true">•</span>
                         <span>{t}</span>
                       </li>
                     ))}
@@ -266,14 +266,14 @@ export default function ResultsDashboard({
                 </div>
 
                 {/* Spacing */}
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-2">
-                  <span className="text-xs font-semibold text-slate-300 block">
+                <div className="bg-[#FAF9F1] p-4 rounded-xl border border-[#CBD6C9]/80 space-y-2">
+                  <span className="text-xs font-semibold text-[#14370D] block">
                     Spacing & Density
                   </span>
-                  <ul className="space-y-1 text-xs text-slate-400">
+                  <ul className="space-y-1 text-xs text-[#52624F]">
                     {analysis.design.spacing.map((s, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-400" aria-hidden="true">•</span>
+                        <span className="text-[#738E6D]" aria-hidden="true">•</span>
                         <span>{s}</span>
                       </li>
                     ))}
@@ -284,10 +284,10 @@ export default function ResultsDashboard({
 
             {/* Inferred Interactions & Assumptions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
+              <div className="border border-[#CBD6C9] bg-white rounded-2xl p-5 space-y-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-amber-400" aria-hidden="true" />
-                  <h3 className="text-sm font-semibold text-slate-200">
+                  <Eye className="w-4 h-4 text-[#738E6D]" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold text-[#14370D]">
                     Inferred Interactions
                   </h3>
                 </div>
@@ -295,34 +295,34 @@ export default function ResultsDashboard({
                   {analysis.interactions.map((inter, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs space-y-1"
+                      className="p-3 bg-[#FAF9F1] rounded-xl border border-[#CBD6C9]/80 text-xs space-y-1"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-200">{inter.element}</span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-800/40">
+                        <span className="font-semibold text-[#1C2B1B]">{inter.element}</span>
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#FEF3B5] text-[#14370D] border border-[#E5CE82]">
                           {inter.status}
                         </span>
                       </div>
-                      <p className="text-slate-400">{inter.behavior}</p>
+                      <p className="text-[#52624F]">{inter.behavior}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
+              <div className="border border-[#CBD6C9] bg-white rounded-2xl p-5 space-y-3 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-purple-400" aria-hidden="true" />
-                  <h3 className="text-sm font-semibold text-slate-200">
+                  <AlertTriangle className="w-4 h-4 text-[#738E6D]" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold text-[#14370D]">
                     Developer Assumptions
                   </h3>
                 </div>
-                <ul className="space-y-2 text-xs text-slate-400">
+                <ul className="space-y-2 text-xs text-[#52624F]">
                   {analysis.assumptions.map((assump, idx) => (
                     <li
                       key={idx}
-                      className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-start gap-2"
+                      className="p-3 bg-[#FAF9F1] rounded-xl border border-[#CBD6C9]/80 flex items-start gap-2"
                     >
-                      <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" aria-hidden="true" />
+                      <Info className="w-4 h-4 text-[#738E6D] shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{assump}</span>
                     </li>
                   ))}
@@ -331,7 +331,6 @@ export default function ResultsDashboard({
             </div>
           </div>
         )}
-
         {/* 2. Component Hierarchy Tab */}
         {activeTab === 'hierarchy' && <ComponentTree tree={blueprint.componentTree} />}
 
@@ -346,25 +345,25 @@ export default function ResultsDashboard({
         {/* 4. Install Commands Tab */}
         {activeTab === 'commands' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex items-center justify-between pb-3 border-b border-[#CBD6C9]/60">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-slate-200">
+                <Terminal className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[#14370D]">
                   Package Installation Commands
                 </h3>
               </div>
             </div>
 
-            <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-3 font-mono text-xs sm:text-sm text-emerald-300 overflow-x-auto">
+            <div className="bg-[#1C2B1B] border border-[#CBD6C9] rounded-2xl p-5 space-y-3 font-mono text-xs sm:text-sm text-[#FEF3B5] overflow-x-auto shadow-inner">
               {blueprint.installationCommands.map((cmd, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <span className="text-slate-600 select-none">$</span>
+                  <span className="text-[#738E6D] select-none">$</span>
                   <span>{cmd}</span>
                 </div>
               ))}
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#52624F]">
               Run these commands in your target Next.js repository before generating the components.
             </p>
           </div>
@@ -373,10 +372,10 @@ export default function ResultsDashboard({
         {/* 5. TypeScript Tab */}
         {activeTab === 'typescript' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex items-center justify-between pb-3 border-b border-[#CBD6C9]/60">
               <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-slate-200">
+                <FileCode className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[#14370D]">
                   Proposed TypeScript Interfaces
                 </h3>
               </div>
@@ -384,23 +383,23 @@ export default function ResultsDashboard({
                 type="button"
                 onClick={handleCopyTs}
                 aria-label="Copy proposed TypeScript interfaces"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1C2B1B] hover:text-[#14370D] bg-white hover:bg-[#F4F6F2] rounded-lg border border-[#CBD6C9] transition-colors focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none shadow-xs"
               >
                 {copiedTs ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                    <Check className="w-3.5 h-3.5 text-[#14370D]" aria-hidden="true" />
                     <span>Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Copy className="w-3.5 h-3.5 text-[#738E6D]" aria-hidden="true" />
                     <span>Copy Interfaces</span>
                   </>
                 )}
               </button>
             </div>
 
-            <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 font-mono text-xs sm:text-sm text-indigo-300 whitespace-pre-wrap overflow-x-auto leading-relaxed">
+            <div className="bg-[#1C2B1B] border border-[#CBD6C9] rounded-2xl p-5 font-mono text-xs sm:text-sm text-[#FAF9F1] whitespace-pre-wrap overflow-x-auto leading-relaxed shadow-inner">
               {blueprint.typescriptOutline}
             </div>
           </div>
@@ -409,14 +408,14 @@ export default function ResultsDashboard({
         {/* 6. Checklist Tab */}
         {activeTab === 'checklist' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex items-center justify-between pb-3 border-b border-[#CBD6C9]/60">
               <div className="flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-slate-200">
+                <CheckSquare className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[#14370D]">
                   Frontend Implementation Checklist
                 </h3>
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-[#52624F]">
                 Prioritized Sequence
               </span>
             </div>
@@ -425,9 +424,9 @@ export default function ResultsDashboard({
               {blueprint.implementationChecklist.map((step, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-800/80 bg-slate-900/40 text-xs sm:text-sm text-slate-300"
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-[#CBD6C9] bg-white text-xs sm:text-sm text-[#1C2B1B] shadow-xs"
                 >
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-mono font-semibold shrink-0 mt-0.5" aria-hidden="true">
+                  <span className="w-5 h-5 rounded-full bg-[#FEF3B5] border border-[#E5CE82] text-[#14370D] flex items-center justify-center text-xs font-mono font-semibold shrink-0 mt-0.5" aria-hidden="true">
                     {idx + 1}
                   </span>
                   <span className="leading-relaxed">{step}</span>

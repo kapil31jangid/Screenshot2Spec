@@ -14,20 +14,20 @@ function getConfidenceBadge(confidence: ConfidenceLevel) {
     case 'observed':
       return {
         label: 'Observed',
-        classes: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/40',
+        classes: 'bg-[#FEF3B5] text-[#14370D] border-[#E5CE82]',
         icon: CheckCircle,
       };
     case 'inferred':
       return {
         label: 'Inferred',
-        classes: 'bg-amber-950/60 text-amber-400 border-amber-800/40',
+        classes: 'bg-[#FFF9E6] text-[#785E12] border-[#E5CE82]',
         icon: Eye,
       };
     case 'unknown':
     default:
       return {
         label: 'Unknown',
-        classes: 'bg-slate-800 text-slate-400 border-slate-700/50',
+        classes: 'bg-[#F5F6F3] text-[#52624F] border-[#E5EAE3]',
         icon: HelpCircle,
       };
   }
@@ -42,7 +42,7 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
   return (
     <div className="select-none text-xs sm:text-sm">
       <div
-        className={`group flex items-start gap-2.5 py-2.5 px-3 rounded-xl border border-transparent hover:border-slate-800 hover:bg-slate-900/60 transition-all ${
+        className={`group flex items-start gap-2.5 py-2.5 px-3 rounded-xl border border-transparent hover:border-[#CBD6C9] hover:bg-[#F4F6F2] transition-all ${
           depth > 0 ? 'ml-3 sm:ml-6 mt-1.5' : 'mt-2'
         }`}
       >
@@ -53,7 +53,7 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
             onClick={() => setIsExpanded(!isExpanded)}
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? 'Collapse' : 'Expand'} component ${node.name}`}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors mt-0.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+            className="p-1 rounded-md text-[#52624F] hover:text-[#14370D] hover:bg-[#E9EFE8] transition-colors mt-0.5 focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none"
           >
             {isExpanded ? (
               <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
@@ -62,21 +62,21 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
             )}
           </button>
         ) : (
-          <div className="w-5.5 h-5.5 flex items-center justify-center text-slate-600 mt-0.5" aria-hidden="true">
-            <Box className="w-3.5 h-3.5 text-slate-500" />
+          <div className="w-5.5 h-5.5 flex items-center justify-center text-[#738E6D] mt-0.5" aria-hidden="true">
+            <Box className="w-3.5 h-3.5 text-[#738E6D]" />
           </div>
         )}
 
         {/* Node Body */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-100 font-mono tracking-tight text-xs sm:text-sm break-all">
+            <span className="font-semibold text-[#14370D] font-mono tracking-tight text-xs sm:text-sm break-all">
               &lt;{node.name} /&gt;
             </span>
 
             {/* UI Type pill */}
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-950/50 border border-indigo-800/40 text-[11px] font-medium text-indigo-300">
-              <Layers className="w-3 h-3" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E9EFE8] border border-[#CBD6C9] text-[11px] font-medium text-[#14370D]">
+              <Layers className="w-3 h-3 text-[#738E6D]" aria-hidden="true" />
               <span>{node.uiType}</span>
             </span>
 
@@ -90,17 +90,17 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
 
             {/* Suggested Library */}
             {node.suggestedLibraryId && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-950/40 border border-purple-800/40 text-[11px] font-medium text-purple-300">
-                <Tag className="w-3 h-3" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FEF3B5]/60 border border-[#CBD6C9] text-[11px] font-medium text-[#14370D]">
+                <Tag className="w-3 h-3 text-[#738E6D]" aria-hidden="true" />
                 <span>{node.suggestedLibraryId}</span>
               </span>
             )}
           </div>
 
-          <p className="text-xs text-slate-300 mb-1 leading-relaxed break-words">{node.purpose}</p>
+          <p className="text-xs text-[#1C2B1B] mb-1 leading-relaxed break-words">{node.purpose}</p>
 
           {node.observedEvidence && (
-            <p className="text-[11px] text-slate-500 italic bg-slate-950/40 px-2 py-1 rounded-md border border-slate-900 inline-block break-words">
+            <p className="text-[11px] text-[#52624F] italic bg-[#FAF9F1] px-2 py-1 rounded-md border border-[#CBD6C9]/80 inline-block break-words">
               Evidence: {node.observedEvidence}
             </p>
           )}
@@ -109,7 +109,7 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
 
       {/* Recursive Children */}
       {hasChildren && isExpanded && (
-        <div className="border-l border-slate-800/80 ml-3 sm:ml-5 pl-1">
+        <div className="border-l border-[#CBD6C9] ml-3 sm:ml-5 pl-1">
           {node.children!.map((child) => (
             <TreeNode key={`${child.id}-${depth + 1}`} node={child} depth={depth + 1} />
           ))}
@@ -122,7 +122,7 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
 export default function ComponentTree({ tree }: ComponentTreeProps) {
   if (!tree || tree.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-500 text-sm border border-slate-800/80 rounded-2xl bg-slate-950/30">
+      <div className="text-center py-12 text-[#52624F] text-sm border border-[#CBD6C9] rounded-2xl bg-white shadow-sm">
         No components detected in the analysis hierarchy.
       </div>
     );
@@ -130,19 +130,19 @@ export default function ComponentTree({ tree }: ComponentTreeProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+      <div className="flex items-center justify-between pb-3 border-b border-[#CBD6C9]/60">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-slate-200">
+          <Layers className="w-4 h-4 text-[#14370D]" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-[#14370D]">
             Detected Component Hierarchy
           </h3>
         </div>
-        <span className="text-xs text-slate-500 font-mono">
+        <span className="text-xs text-[#52624F] font-mono">
           {tree.length} Root Components
         </span>
       </div>
 
-      <div className="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-4 sm:p-5 overflow-x-auto">
+      <div className="bg-white border border-[#CBD6C9] rounded-2xl p-4 sm:p-5 overflow-x-auto shadow-sm">
         {tree.map((rootNode) => (
           <TreeNode key={`${rootNode.id}-0`} node={rootNode} />
         ))}

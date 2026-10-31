@@ -166,40 +166,40 @@ export default function ScreenshotUpload({
           onDrop={handleDrop}
           onClick={handleTriggerUpload}
           onKeyDown={handleKeyDown}
-          className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[260px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+          className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[260px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#14370D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF9F1] ${
             isDragging
-              ? 'border-indigo-500 bg-indigo-950/20 shadow-lg shadow-indigo-500/10'
-              : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
+              ? 'border-[#14370D] bg-[#FEF3B5]/40 shadow-lg shadow-[#14370D]/10'
+              : 'border-[#CBD6C9] bg-white hover:border-[#738E6D] hover:bg-[#F4F6F2]'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform mb-4 shadow-inner">
+          <div className="w-16 h-16 rounded-2xl bg-[#FEF3B5]/80 border border-[#E5CE82] flex items-center justify-center text-[#14370D] group-hover:scale-105 transition-transform mb-4 shadow-sm">
             <Upload className="w-8 h-8" aria-hidden="true" />
           </div>
 
-          <h4 className="text-base sm:text-lg font-semibold text-slate-200 mb-1">
+          <h4 className="text-base sm:text-lg font-semibold text-[#14370D] mb-1">
             Drag & drop your screenshot here
           </h4>
-          <p className="text-xs sm:text-sm text-slate-400 mb-4 max-w-sm">
+          <p className="text-xs sm:text-sm text-[#52624F] mb-4 max-w-sm">
             or press Enter / click to browse. Supports PNG, JPEG, and WebP (up to 5 MB).
           </p>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
-            <ImageIcon className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FEF3B5]/60 border border-[#CBD6C9] text-xs text-[#1C2B1B]">
+            <ImageIcon className="w-3.5 h-3.5 text-[#738E6D]" aria-hidden="true" />
             <span>Dashboard, Landing Page, Forms, or App UI</span>
           </div>
         </div>
       ) : (
-        <div className="relative border border-slate-800 bg-slate-900/60 rounded-2xl p-4 sm:p-6 transition-all">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+        <div className="relative border border-[#CBD6C9] bg-white rounded-2xl p-4 sm:p-6 shadow-sm transition-all">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#CBD6C9]/60">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#FEF3B5]/80 border border-[#E5CE82] flex items-center justify-center text-[#14370D] shrink-0">
                 <FileText className="w-5 h-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-200 truncate max-w-xs sm:max-w-md">
+                <p className="text-sm font-semibold text-[#1C2B1B] truncate max-w-xs sm:max-w-md">
                   {selectedFile.name}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[#52624F]">
                   {formatFileSize(selectedFile.size)} • {selectedFile.type || 'image'}
                 </p>
               </div>
@@ -211,10 +211,10 @@ export default function ScreenshotUpload({
                 onClick={handleTriggerUpload}
                 disabled={disabled}
                 aria-label="Replace screenshot image"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1C2B1B] bg-white hover:bg-[#F4F6F2] hover:text-[#14370D] rounded-lg border border-[#CBD6C9] transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#14370D] focus:outline-none shadow-xs"
                 title="Replace image"
               >
-                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+                <RefreshCw className="w-3.5 h-3.5 text-[#738E6D]" aria-hidden="true" />
                 <span>Replace</span>
               </button>
               <button
@@ -222,10 +222,10 @@ export default function ScreenshotUpload({
                 onClick={handleRemove}
                 disabled={disabled}
                 aria-label="Remove selected screenshot"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 bg-rose-950/30 hover:bg-rose-900/50 hover:text-rose-300 rounded-lg border border-rose-800/40 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-500 focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 hover:text-red-800 rounded-lg border border-red-200 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-red-500 focus:outline-none"
                 title="Remove image"
               >
-                <X className="w-3.5 h-3.5" aria-hidden="true" />
+                <X className="w-3.5 h-3.5 text-red-600" aria-hidden="true" />
                 <span>Remove</span>
               </button>
             </div>
@@ -233,12 +233,12 @@ export default function ScreenshotUpload({
 
           {/* Image Preview Container */}
           {previewUrl && (
-            <div className="mt-4 relative rounded-xl overflow-hidden bg-slate-950/80 border border-slate-800/80 max-h-96 flex items-center justify-center p-2">
+            <div className="mt-4 relative rounded-xl overflow-hidden bg-[#FAF9F1] border border-[#CBD6C9] max-h-96 flex items-center justify-center p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
                 alt={`Preview of uploaded screenshot: ${selectedFile.name}`}
-                className="max-h-80 w-auto object-contain rounded-lg shadow-md"
+                className="max-h-80 w-auto object-contain rounded-lg shadow-sm"
               />
             </div>
           )}
@@ -250,9 +250,9 @@ export default function ScreenshotUpload({
         <div
           role="alert"
           aria-live="assertive"
-          className="flex items-center gap-2 p-3 bg-rose-950/40 border border-rose-800/50 rounded-xl text-xs sm:text-sm text-rose-300 animate-fadeIn"
+          className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-xs sm:text-sm text-red-800 animate-fadeIn"
         >
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" aria-hidden="true" />
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-600" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
