@@ -1,7 +1,11 @@
 # Screenshot2Spec — Team Contract & Architecture Guide
 
+Tagline: **"See It. Specify It. Build It."**
+
+---
+
 ## 1. Project Purpose
-Screenshot2Spec converts UI screenshots into implementation-ready AI coding blueprints using Gemma 4 via Google AI Studio API.
+Screenshot2Spec converts UI screenshots into implementation-ready frontend blueprints and library-aware AI coding prompts using **Google Gemma 4** via Google AI Studio API.
 
 ---
 
@@ -13,18 +17,19 @@ Screenshot2Spec converts UI screenshots into implementation-ready AI coding blue
 ### Request Format
 - **Content-Type**: `multipart/form-data`
 - **Fields**:
-  - `screenshot` (File, Required): PNG, JPG, or WebP image, max 5 MB
-  - `framework` (string, Required): e.g. "Next.js", "React", "Vue", "Svelte"
-  - `styling` (string, Required): e.g. "Tailwind CSS", "CSS Modules", "Styled Components"
-  - `instructions` (string, Optional): User specific constraints or guidance (max 2000 chars)
+  - `screenshot` (File, Required): PNG, JPEG, or WebP image, max 5 MB
+  - `framework` (string, Required): e.g. "Next.js / React (App Router)"
+  - `styling` (string, Required): e.g. "Tailwind CSS"
+  - `instructions` (string, Optional): User-specific constraints or guidance (max 2,000 chars)
 
 ### Response Format
-- **Success (200 OK)**:
+
+#### Success (200 OK):
 ```json
 {
   "analysis": {
     "pageType": "dashboard",
-    "summary": "Analytics dashboard...",
+    "summary": "Analytics dashboard with sidebar and revenue metrics",
     "layout": ["sidebar", "header", "main content"],
     "components": [
       {
@@ -51,13 +56,14 @@ Screenshot2Spec converts UI screenshots into implementation-ready AI coding blue
       }
     ],
     "assumptions": [
-      "Mobile navigation behavior is unknown"
+      "Mobile navigation behavior is unknown",
+      "The chart data source cannot be determined from screenshot alone"
     ]
   }
 }
 ```
 
-- **Error (4xx / 5xx)**:
+#### Error (4xx / 5xx):
 ```json
 {
   "error": "User-friendly error message",
@@ -67,30 +73,32 @@ Screenshot2Spec converts UI screenshots into implementation-ready AI coding blue
 
 ---
 
-## 3. File Ownership & Responsibilities
+## 3. Directory Structure & File Ownership
 
-### Member 1: Frontend and UI Development
-- `src/app/page.tsx`
-- `src/app/globals.css`
-- `src/components/**` (ScreenshotUpload, ResultsDashboard, ComponentTree, LibraryRecommendations, PromptPreview, ExportActions)
+Screenshot2Spec is partitioned into dedicated frontend and backend services:
 
-### Member 2: Gemma 4 API and Backend
-- `src/app/api/analyze/route.ts`
-- `src/lib/gemma.ts`
-- `src/lib/analysisPrompt.ts`
+### Member 1: Frontend & User Experience (`frontend/`)
+- `frontend/src/app/**` (page, layout, styles)
+- `frontend/src/components/**` (ScreenshotUpload, ConfigurationPanel, ResultsDashboard, ComponentTree, LibraryRecommendations, PromptPreview, ExportActions)
+- `frontend/src/hooks/**` (useScreenshot, useAnalysis, useClipboard)
+- `frontend/tests/frontend.test.mjs`
 
-### Member 3: Specification, Library Mapping & Prompt Generation
-- `src/lib/libraryCatalog.ts`
-- `src/lib/specificationGenerator.ts`
-- `src/lib/promptGenerator.ts`
-- `src/lib/exporters.ts`
-- `tests/**`
+### Member 2: Gemma 4 API & Backend (`backend/`)
+- `backend/src/server.ts` (standalone server)
+- `backend/src/api/analyze/route.ts` (API route handler)
+- `backend/src/lib/gemma.ts` (Google GenAI SDK client)
+- `backend/src/lib/analysisPrompt.ts` (Gemma 4 vision analysis prompt)
 
-### Shared Contracts (Locked)
-- `src/types/analysis.ts`
-- `src/types/specification.ts`
-- `src/lib/schemas.ts`
-- `src/lib/mockAnalysis.ts`
+### Member 3: Specification, Library Catalog & Exporters (`backend/` & shared)
+- `backend/src/lib/libraryCatalog.ts`
+- `backend/src/lib/specificationGenerator.ts`
+- `backend/src/lib/promptGenerator.ts`
+- `backend/src/lib/exporters.ts`
+- `backend/tests/**`
 
-Any modifications to shared contracts must be reviewed and agreed upon by all members.
-
+### Shared Contracts (Immutable without team consensus)
+- `types/analysis.ts`
+- `types/specification.ts`
+- `lib/schemas.ts`
+- `lib/mockAnalysis.ts`
+- `docs/TEAM_CONTRACT.md`
