@@ -220,3 +220,4 @@ Executed using Node.js native test runner with `tsx` import:
 
 1. **Vercel Environment Variables:** When deploying on Vercel, ensure `GEMINI_API_KEY` and `GEMMA_MODEL=gemma-4-26b-a4b-it` are added to the Project Settings under *Environment Variables*.
 2. **Demo Rehearsal:** For live hackathon presentations, keep the `?mock=true` toggle handy as an instant offline backup in case conference Wi-Fi experiences network latency.
+
