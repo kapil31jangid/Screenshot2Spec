@@ -41,37 +41,71 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
     throw new Error('MISSING_API_KEY: GEMINI_API_KEY is not configured on the server. Please set GEMINI_API_KEY in your environment or .env.local.');
   }
 
-  // Model ID: Use GEMMA_MODEL from environment, default to gemma-4-26b-a4b-it
-  const modelName = process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it';
+  // Model ID: Use GEMMA_MODEL from environment, ensuring 'models/' prefix
+  let rawModelName = (process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it').trim();
+  const normalizedModel = rawModelName.startsWith('models/') ? rawModelName : `models/${rawModelName}`;
 
-  console.log(`[Gemma Backend] Dispatching analysis to model: ${modelName} (image size: ${(request.imageBuffer.length / 1024).toFixed(1)} KB, type: ${request.mimeType})`);
+  console.log(`[Gemma Backend] Dispatching analysis to model: ${normalizedModel} (image size: ${(request.imageBuffer.length / 1024).toFixed(1)} KB, type: ${request.mimeType})`);
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const base64Data = request.imageBuffer.toString('base64');
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              inlineData: {
-                mimeType: request.mimeType,
-                data: base64Data,
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: normalizedModel,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType: request.mimeType,
+                  data: base64Data,
+                },
               },
-            },
+              {
+                text: request.prompt,
+              },
+            ],
+          },
+        ],
+        config: {
+          temperature: 0.1,
+        },
+      });
+    } catch (primaryErr: unknown) {
+      // If models/ prefix failed or raw name is needed, retry with raw name
+      const pMsg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      if (rawModelName !== normalizedModel && (pMsg.includes('500') || pMsg.includes('NOT_FOUND') || pMsg.includes('404'))) {
+        console.warn(`[Gemma Backend] Retrying with raw model identifier: ${rawModelName}`);
+        response = await ai.models.generateContent({
+          model: rawModelName,
+          contents: [
             {
-              text: request.prompt,
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: request.mimeType,
+                    data: base64Data,
+                  },
+                },
+                {
+                  text: request.prompt,
+                },
+              ],
             },
           ],
-        },
-      ],
-      config: {
-        temperature: 0.1,
-      },
-    });
+          config: {
+            temperature: 0.1,
+          },
+        });
+      } else {
+        throw primaryErr;
+      }
+    }
 
     const rawText = response.text || '';
     if (!rawText.trim()) {
@@ -83,7 +117,7 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
     return {
       rawText,
       cleanedJsonText,
-      modelUsed: modelName,
+      modelUsed: normalizedModel,
     };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -96,7 +130,7 @@ export async function callGemmaMultimodal(request: GemmaAnalysisRequest): Promis
       throw new Error('QUOTA_EXCEEDED: Google AI Studio API rate limit or quota exceeded. Please try again later.');
     }
     if (errorMsg.includes('404') || errorMsg.includes('NOT_FOUND') || errorMsg.includes('model not found')) {
-      throw new Error(`MODEL_UNAVAILABLE: Model "${modelName}" is currently unavailable or unsupported for this API key.`);
+      throw new Error(`MODEL_UNAVAILABLE: Model "${normalizedModel}" is currently unavailable or unsupported for this API key.`);
     }
 
     throw new Error(`ANALYSIS_FAILED: ${errorMsg}`);

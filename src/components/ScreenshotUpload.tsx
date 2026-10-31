@@ -241,3 +241,4 @@ export function ScreenshotUpload({ onAnalyze, isLoading, onUseMock }: Screenshot
     </form>
   );
 }
+

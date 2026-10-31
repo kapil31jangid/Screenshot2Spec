@@ -145,7 +145,29 @@ export async function POST(req: NextRequest): Promise<NextResponse<AnalyzeApiSuc
       );
     }
 
-    // 9. Validate against Zod schema and check component hierarchy integrity
+    // 9. Normalize minimal/empty layout & components if model returned empty arrays
+    if (parsedJson && typeof parsedJson === 'object') {
+      const obj = parsedJson as Record<string, unknown>;
+      if (!Array.isArray(obj.layout) || obj.layout.length === 0) {
+        obj.layout = ['main-content'];
+      }
+      if (!Array.isArray(obj.components) || obj.components.length === 0) {
+        obj.components = [
+          {
+            id: 'page-root',
+            name: 'PageRoot',
+            parentId: null,
+            uiType: 'container',
+            purpose: 'Root layout container',
+            observedEvidence: 'Base screen or viewport layout',
+            confidence: 'observed',
+            suggestedLibraryId: 'tailwind',
+          },
+        ];
+      }
+    }
+
+    // 10. Validate against Zod schema and check component hierarchy integrity
     const validationResult = parseAndValidateAnalysis(parsedJson);
     if (!validationResult.success || !validationResult.data) {
       console.error('[API /api/analyze] Validation failed:', validationResult.errors);

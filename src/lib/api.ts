@@ -41,3 +41,4 @@ export async function analyzeScreenshot(options: AnalyzeRequestOptions): Promise
 
   return (data as AnalyzeApiSuccessResponse).analysis;
 }
+

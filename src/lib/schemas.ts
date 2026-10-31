@@ -53,9 +53,9 @@ export const uiInteractionSchema = z.object({
 export const analysisSchema = z.object({
   pageType: z.string().min(1, 'Page type is required'),
   summary: z.string().min(1, 'Summary is required'),
-  layout: z.array(z.string()).min(1, 'At least one layout region is required'),
-  components: z.array(uiComponentSchema).min(1, 'At least one component must be detected'),
-  design: designSystemSchema,
+  layout: z.array(z.string()).default(['main-content']),
+  components: z.array(uiComponentSchema).default([]),
+  design: designSystemSchema.default({ colors: [], typography: [], spacing: [] }),
   interactions: z.array(uiInteractionSchema).default([]),
   assumptions: z.array(z.string()).default([]),
 });

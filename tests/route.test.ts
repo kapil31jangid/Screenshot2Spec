@@ -106,4 +106,47 @@ describe('POST /api/analyze Route Handler', () => {
     assert.ok(Array.isArray(json.analysis.components));
     assert.ok(json.analysis.components.length > 0);
   });
+
+  it('successfully invokes live Gemma 4 endpoint when GEMINI_API_KEY is configured', async () => {
+    // Read from .env if present
+    const fs = await import('fs');
+    if (!process.env.GEMINI_API_KEY && fs.existsSync('.env')) {
+      const dotenv = fs.readFileSync('.env', 'utf-8');
+      for (const line of dotenv.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const idx = trimmed.indexOf('=');
+          process.env[trimmed.slice(0, idx)] = trimmed.slice(idx + 1);
+        }
+      }
+    }
+
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_api_key_here') {
+      console.log('Skipping live Gemma 4 test: GEMINI_API_KEY is not set');
+      return;
+    }
+
+    const samplePngBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const buffer = Buffer.from(samplePngBase64, 'base64');
+    const blob = new Blob([buffer], { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('screenshot', blob, 'sample.png');
+    formData.append('framework', 'Next.js / React');
+    formData.append('styling', 'Tailwind CSS');
+
+    const req = new NextRequest('http://localhost:3000/api/analyze', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await POST(req);
+    assert.equal(res.status, 200);
+    const json = await res.json();
+    assert.ok(json.analysis);
+    assert.ok(json.analysis.components.length > 0);
+    console.log(`Live Gemma 4 test succeeded: detected pageType="${json.analysis.pageType}", ${json.analysis.components.length} components`);
+  });
 });
+

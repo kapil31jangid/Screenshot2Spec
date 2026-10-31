@@ -20,7 +20,7 @@ ${instructions ? `- Additional User Instructions: ${instructions}` : ''}
 ANALYSIS GUIDELINES:
 1. Examine the visual layout, structural hierarchy, UI elements, design system patterns, and interactions.
 2. Ground all component claims in visible evidence:
-   - Identify visible components (headers, sidebars, grids, cards, tables, charts, buttons, dialogs, forms, etc.).
+   - Identify visible components (headers, sidebars, grids, cards, tables, charts, buttons, dialogs, forms, etc.). Always identify at least the primary container / layout view (e.g. "MainContainer" or "PageRoot" with parentId: null).
    - Assign clean, descriptive PascalCase names (e.g. "AppSidebar", "MetricCard", "RevenueChart").
    - Assign unique hyphenated lowercase IDs (e.g. "app-sidebar", "revenue-chart", "orders-table").
    - Establish parent-child relationships using "parentId". Top-level layout regions have parentId: null. Nested components reference their parent component's id.

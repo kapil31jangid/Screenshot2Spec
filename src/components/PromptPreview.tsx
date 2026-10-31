@@ -93,3 +93,4 @@ export function PromptPreview({ promptText, onClear }: PromptPreviewProps) {
     </div>
   );
 }
+
