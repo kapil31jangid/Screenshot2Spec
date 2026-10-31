@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ValidatedAnalysis } from '@/types/analysis';
 import { DeveloperBlueprint } from '@/types/specification';
+import { copyTextToClipboard } from '@/lib/clipboard';
 import ComponentTree from './ComponentTree';
 import LibraryRecommendations from './LibraryRecommendations';
 import PromptPreview from './PromptPreview';
@@ -23,11 +24,16 @@ import {
   RotateCcw,
   Copy,
   Check,
+  Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface ResultsDashboardProps {
   analysis: ValidatedAnalysis;
   blueprint: DeveloperBlueprint;
+  screenshotFile: File | null;
+  screenshotPreviewUrl: string | null;
   onClear: () => void;
 }
 
@@ -44,10 +50,13 @@ type TabKey =
 export default function ResultsDashboard({
   analysis,
   blueprint,
+  screenshotFile,
+  screenshotPreviewUrl,
   onClear,
 }: ResultsDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [copiedTs, setCopiedTs] = useState(false);
+  const [showScreenshotReference, setShowScreenshotReference] = useState(true);
 
   const tabs: { key: TabKey; label: string; icon: React.ElementType; badge?: string | number }[] = [
     { key: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -60,10 +69,12 @@ export default function ResultsDashboard({
     { key: 'export', label: 'Export Blueprint', icon: Download },
   ];
 
-  const handleCopyTs = () => {
-    navigator.clipboard.writeText(blueprint.typescriptOutline);
-    setCopiedTs(true);
-    setTimeout(() => setCopiedTs(false), 2000);
+  const handleCopyTs = async () => {
+    const success = await copyTextToClipboard(blueprint.typescriptOutline);
+    if (success) {
+      setCopiedTs(true);
+      setTimeout(() => setCopiedTs(false), 2000);
+    }
   };
 
   return (
@@ -87,15 +98,59 @@ export default function ResultsDashboard({
         <button
           type="button"
           onClick={onClear}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700 transition-colors self-start md:self-auto shrink-0 shadow-sm"
+          aria-label="Analyze new screenshot and reset current results"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700 transition-colors self-start md:self-auto shrink-0 shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
           <span>Analyze New Screenshot</span>
         </button>
       </div>
 
+      {/* Reference Screenshot Banner (Persists during results review) */}
+      {screenshotPreviewUrl && (
+        <div className="border border-slate-800 bg-slate-900/30 rounded-2xl p-4 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+              <h3 className="text-xs font-semibold text-slate-300">
+                Reference Screenshot ({screenshotFile?.name || 'Uploaded reference'})
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowScreenshotReference(!showScreenshotReference)}
+              aria-expanded={showScreenshotReference}
+              aria-label={showScreenshotReference ? 'Hide reference screenshot' : 'Show reference screenshot'}
+              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded px-2 py-1"
+            >
+              <span>{showScreenshotReference ? 'Collapse' : 'Expand'}</span>
+              {showScreenshotReference ? (
+                <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+          {showScreenshotReference && (
+            <div className="mt-3 max-h-64 overflow-hidden rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-center p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshotPreviewUrl}
+                alt={`Reference screenshot: ${screenshotFile?.name || 'Visual target'}`}
+                className="max-h-60 w-auto object-contain rounded-lg shadow-sm"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation Tabs Bar */}
-      <div className="border-b border-slate-800 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+      <div
+        role="tablist"
+        aria-label="Blueprint result sections"
+        className="border-b border-slate-800 flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none"
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -103,15 +158,20 @@ export default function ResultsDashboard({
           return (
             <button
               key={tab.key}
+              id={`tab-${tab.key}`}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`panel-${tab.key}`}
+              tabIndex={isActive ? 0 : -1}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none ${
                 isActive
                   ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
@@ -130,17 +190,23 @@ export default function ResultsDashboard({
       </div>
 
       {/* Tab Panels */}
-      <div className="pt-2">
+      <div
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        tabIndex={0}
+        className="pt-2 focus:outline-none"
+      >
         {/* 1. Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Layout Regions */}
             <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
               <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-indigo-400" />
-                <h4 className="text-sm font-semibold text-slate-200">
+                <LayoutDashboard className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-slate-200">
                   Detected Layout Structure
-                </h4>
+                </h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {analysis.layout.map((region, idx) => (
@@ -148,7 +214,7 @@ export default function ResultsDashboard({
                     key={idx}
                     className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 font-medium flex items-center gap-1.5"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" aria-hidden="true" />
                     <span>{region}</span>
                   </div>
                 ))}
@@ -158,10 +224,10 @@ export default function ResultsDashboard({
             {/* Design System Summary */}
             <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4 text-indigo-400" />
-                <h4 className="text-sm font-semibold text-slate-200">
+                <Palette className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-slate-200">
                   Design System Observations
-                </h4>
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -176,6 +242,7 @@ export default function ResultsDashboard({
                         <span
                           className="w-3.5 h-3.5 rounded-md border border-white/20 shrink-0"
                           style={{ backgroundColor: c }}
+                          aria-hidden="true"
                         />
                         <span>{c}</span>
                       </div>
@@ -191,7 +258,7 @@ export default function ResultsDashboard({
                   <ul className="space-y-1 text-xs text-slate-400">
                     {analysis.design.typography.map((t, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-400">•</span>
+                        <span className="text-indigo-400" aria-hidden="true">•</span>
                         <span>{t}</span>
                       </li>
                     ))}
@@ -206,7 +273,7 @@ export default function ResultsDashboard({
                   <ul className="space-y-1 text-xs text-slate-400">
                     {analysis.design.spacing.map((s, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
-                        <span className="text-indigo-400">•</span>
+                        <span className="text-indigo-400" aria-hidden="true">•</span>
                         <span>{s}</span>
                       </li>
                     ))}
@@ -219,10 +286,10 @@ export default function ResultsDashboard({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-amber-400" />
-                  <h4 className="text-sm font-semibold text-slate-200">
+                  <Eye className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold text-slate-200">
                     Inferred Interactions
-                  </h4>
+                  </h3>
                 </div>
                 <div className="space-y-2">
                   {analysis.interactions.map((inter, idx) => (
@@ -244,10 +311,10 @@ export default function ResultsDashboard({
 
               <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-purple-400" />
-                  <h4 className="text-sm font-semibold text-slate-200">
+                  <AlertTriangle className="w-4 h-4 text-purple-400" aria-hidden="true" />
+                  <h3 className="text-sm font-semibold text-slate-200">
                     Developer Assumptions
-                  </h4>
+                  </h3>
                 </div>
                 <ul className="space-y-2 text-xs text-slate-400">
                   {analysis.assumptions.map((assump, idx) => (
@@ -255,7 +322,7 @@ export default function ResultsDashboard({
                       key={idx}
                       className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-start gap-2"
                     >
-                      <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                      <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{assump}</span>
                     </li>
                   ))}
@@ -281,14 +348,14 @@ export default function ResultsDashboard({
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-400" />
-                <h4 className="text-sm font-semibold text-slate-200">
+                <Terminal className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-slate-200">
                   Package Installation Commands
-                </h4>
+                </h3>
               </div>
             </div>
 
-            <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-3 font-mono text-xs sm:text-sm text-emerald-300">
+            <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-3 font-mono text-xs sm:text-sm text-emerald-300 overflow-x-auto">
               {blueprint.installationCommands.map((cmd, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <span className="text-slate-600 select-none">$</span>
@@ -308,24 +375,25 @@ export default function ResultsDashboard({
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-indigo-400" />
-                <h4 className="text-sm font-semibold text-slate-200">
+                <FileCode className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-slate-200">
                   Proposed TypeScript Interfaces
-                </h4>
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={handleCopyTs}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
+                aria-label="Copy proposed TypeScript interfaces"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
               >
                 {copiedTs ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
                     <span>Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Copy Interfaces</span>
                   </>
                 )}
@@ -343,10 +411,10 @@ export default function ResultsDashboard({
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
               <div className="flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-emerald-400" />
-                <h4 className="text-sm font-semibold text-slate-200">
+                <CheckSquare className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-slate-200">
                   Frontend Implementation Checklist
-                </h4>
+                </h3>
               </div>
               <span className="text-xs text-slate-500">
                 Prioritized Sequence
@@ -359,7 +427,7 @@ export default function ResultsDashboard({
                   key={idx}
                   className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-800/80 bg-slate-900/40 text-xs sm:text-sm text-slate-300"
                 >
-                  <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-mono font-semibold shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-mono font-semibold shrink-0 mt-0.5" aria-hidden="true">
                     {idx + 1}
                   </span>
                   <span className="leading-relaxed">{step}</span>

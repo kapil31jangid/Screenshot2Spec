@@ -1,10 +1,12 @@
-import { ValidatedAnalysis, DetectedComponent } from '@/types/analysis';
-import { DeveloperBlueprint, ComponentTreeNode, LibraryRecommendation } from '@/types/specification';
+import { ValidatedAnalysis, DetectedComponent } from '../types/analysis';
+import { DeveloperBlueprint, ComponentTreeNode, LibraryRecommendation } from '../types/specification';
 
 /**
  * Builds a hierarchical component tree from flat component list using parentId.
  */
 export function buildComponentTree(components: DetectedComponent[]): ComponentTreeNode[] {
+  if (!components || components.length === 0) return [];
+
   const nodeMap = new Map<string, ComponentTreeNode>();
 
   // Initialize nodes
@@ -38,7 +40,7 @@ export function deriveLibraryRecommendations(components: DetectedComponent[]): L
     const libId = comp.suggestedLibraryId?.toLowerCase() || '';
     const uiType = comp.uiType?.toLowerCase() || '';
 
-    if ((libId === 'shadcn' || uiType === 'card' || uiType === 'navigation' || uiType === 'modal') && !added.has('shadcn')) {
+    if ((libId === 'shadcn' || uiType === 'card' || uiType === 'navigation' || uiType === 'modal' || uiType === 'dialog' || uiType === 'header') && !added.has('shadcn')) {
       added.add('shadcn');
       recommendations.push({
         libraryId: 'shadcn',
@@ -83,7 +85,7 @@ export function deriveLibraryRecommendations(components: DetectedComponent[]): L
       });
     }
 
-    if ((libId === 'tanstack-table' || libId === 'react-table') && !added.has('tanstack-table')) {
+    if ((libId === 'tanstack-table' || libId === 'react-table' || (uiType === 'table' && comp.purpose.toLowerCase().includes('advanced'))) && !added.has('tanstack-table')) {
       added.add('tanstack-table');
       recommendations.push({
         libraryId: 'tanstack-table',
@@ -99,7 +101,7 @@ export function deriveLibraryRecommendations(components: DetectedComponent[]): L
     }
   });
 
-  // Always include Tailwind CSS if not present
+  // Always include Tailwind CSS
   if (!added.has('tailwind')) {
     recommendations.unshift({
       libraryId: 'tailwind',
@@ -157,7 +159,8 @@ export function generateTypescriptOutline(analysis: ValidatedAnalysis): string {
 }
 
 /**
- * Assembles a comprehensive master coding prompt suitable for AI coding assistants.
+ * Assembles a comprehensive master coding prompt containing all 15 mandatory sections
+ * specified in Section 6.2 of Screenshot2Spec.pdf.
  */
 export function generateCodingAssistantPrompt(
   analysis: ValidatedAnalysis,
@@ -165,61 +168,116 @@ export function generateCodingAssistantPrompt(
   styling: string,
   instructions: string
 ): string {
-  const compNames = analysis.components.map((c) => `- \`${c.name}\` (${c.uiType}): ${c.purpose}`).join('\n');
+  const compNames = analysis.components
+    .map((c) => `- \`${c.name}\` (${c.uiType}): ${c.purpose} (Parent: ${c.parentId ? `\`${c.parentId}\`` : 'None'})`)
+    .join('\n');
   const layoutRegions = analysis.layout.map((l) => `- ${l}`).join('\n');
   const assumptionsList = analysis.assumptions.map((a) => `- ${a}`).join('\n');
+  const tsOutline = generateTypescriptOutline(analysis);
 
-  return `You are a senior React and TypeScript frontend engineer experienced in implementing responsive, maintainable interfaces from visual references.
+  return `# Master Frontend Implementation Blueprint
 
-### Objective
-Implement the uploaded interface screenshot using the selected technology stack: **${framework}** and **${styling}**.
-Use the original screenshot as the primary visual reference. Recreate the visible design as closely as practical while maintaining clean component boundaries.
+## 1. Role and Implementation Objective
+You are a senior React and TypeScript frontend engineer experienced in implementing responsive, maintainable interfaces from visual references.
+Your objective is to implement the uploaded interface screenshot using the selected technology stack (**${framework}** and **${styling}**).
+Recreate the visible design as faithfully as practical while enforcing maintainable component architecture.
 
-${instructions ? `### Additional User Instructions\n${instructions}\n` : ''}
+## 2. Reference Screenshot Instructions
+Use the uploaded user interface screenshot as the primary visual reference for:
+- Spatial alignment and grid layout
+- Color contrast, surface elevations, and borders
+- Component hierarchies and typography sizing
+- Visual hierarchy of primary, secondary, and tertiary elements
 
-### Page Summary & Classification
-- **Type:** ${analysis.pageType}
-- **Overview:** ${analysis.summary}
+## 3. Target Framework and Styling Preferences
+- **Framework:** ${framework}
+- **Styling Solution:** ${styling}
+${instructions ? `- **Developer Instructions & Constraints:** ${instructions}` : ''}
 
+## 4. Identified Layout and Component Architecture
 ### Layout Regions
 ${layoutRegions}
 
-### Component Architecture
-Create the following components:
+### Component Architecture Breakdown
 ${compNames}
 
-### Design System & Token Hints
-- **Color Palette:** ${analysis.design.colors.join(', ')}
-- **Typography:** ${analysis.design.typography.join('; ')}
-- **Spacing Guidelines:** ${analysis.design.spacing.join('; ')}
+## 5. Recommended Libraries for Each Component
+- **Layout & Typography:** Tailwind CSS for grid, flexbox, and responsive utility styling.
+- **Navigation & Interactive Primitives:** shadcn/ui for Button, Card, Sidebar, and Dialog components.
+- **Analytics & Data Visualizations:** Recharts for chart containers and SVG data points.
+- **Icons:** Lucide React for consistent and accessible iconography.
+- **Tables & Lists:** Native HTML semantic elements unless sorting/filtering demands TanStack Table.
 
-### Verified Dependency Installation
+## 6. Dependency Installation Instructions
+Before writing code, inspect \`package.json\` and install missing required packages only:
 \`\`\`bash
 npx shadcn@latest init
-npx shadcn@latest add card button sidebar
+npx shadcn@latest add card button sidebar dialog
 npm install lucide-react recharts
 \`\`\`
 
-### Inferred Interactions & Assumptions
+## 7. TypeScript Interface Recommendations
+\`\`\`typescript
+${tsOutline}
+\`\`\`
+
+## 8. Suggested File and Folder Organization
+\`\`\`
+src/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── globals.css
+├── components/
+${analysis.components.map((c) => `│   ├── ${c.name}.tsx`).join('\n')}
+├── types/
+│   └── ${analysis.pageType}.types.ts
+└── lib/
+    └── utils.ts
+\`\`\`
+
+## 9. Design and Styling Instructions
+- **Color Palette:** ${analysis.design.colors.join(', ')}
+- **Typography Scale:** ${analysis.design.typography.join('; ')}
+- **Spacing Guidelines:** ${analysis.design.spacing.join('; ')}
+
+## 10. Responsive Behavior
+- **Mobile (<768px):** Navigation collapses to sliding drawer or bottom bar; metric cards stack in a single column (1 col); charts adjust width dynamically (100%).
+- **Tablet (768px - 1024px):** 2-column card grid; condensed sidebar.
+- **Desktop (1024px+):** Full 4-column metric grid; fixed persistent sidebar; expanded layout.
+
+## 11. Interaction Assumptions
 ${assumptionsList}
 
-### Implementation Sequence
-1. Review existing project structure and install missing verified dependencies.
-2. Define TypeScript interfaces for component props and mock data.
-3. Construct the outer responsive layout shell (desktop, tablet, mobile).
-4. Implement reusable UI components using Tailwind CSS and recommended primitives.
-5. Populate data-driven components (charts, cards, tables) with structured mock data.
-6. Verify accessibility tags (ARIA roles, keyboard navigation, readable contrast).
-7. Execute build verification (\`npm run build\` and type-check) to ensure zero errors.
+## 12. Accessibility Requirements
+- All interactive controls must be keyboard operable with visible focus states (\`focus-visible:ring-2\`).
+- Ensure contrast ratio >= 4.5:1 for body copy and >= 3:1 for large headings against background.
+- Semantic HTML tags: \`<header>\`, \`<nav>\`, \`<main>\`, \`<section>\`, \`<article>\`, \`<table>\`.
+- All icon-only buttons must have descriptive \`aria-label\` attributes.
 
-### Expected Deliverables
+## 13. Implementation Sequence
+1. Review existing repository dependencies and install verified packages.
+2. Setup TypeScript interfaces and typed mock datasets for data-driven components.
+3. Construct the outer responsive page layout shell (desktop and mobile).
+4. Implement reusable presentation components using Tailwind CSS and recommended UI primitives.
+5. Populate interactive elements (charts, tables, cards) with realistic mock data.
+6. Verify keyboard accessibility and responsive viewport scaling.
+7. Run type checking (\`npx tsc --noEmit\`) and production build verification.
+
+## 14. Validation and Testing Steps
+- Visual fidelity test: compare rendered components against screenshot.
+- TypeScript test: execute \`npx tsc --noEmit\` with zero errors.
+- Build test: execute \`npm run build\` to verify server-side rendering (SSR) compatibility.
+- Responsive test: check 320px, 375px, 768px, and 1280px screen widths.
+
+## 15. Expected Deliverables
 - Working Next.js App Router page and subcomponents.
 - Type-safe component definitions and props.
 - Mobile-responsive layout matching the uploaded screenshot.`;
 }
 
 /**
- * Mock specification generator adapter that implements DeveloperBlueprint generation.
+ * Specification generator adapter that implements DeveloperBlueprint generation.
  */
 export function generateDeveloperBlueprint(
   analysis: ValidatedAnalysis,

@@ -43,25 +43,26 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
     <div className="select-none text-xs sm:text-sm">
       <div
         className={`group flex items-start gap-2.5 py-2.5 px-3 rounded-xl border border-transparent hover:border-slate-800 hover:bg-slate-900/60 transition-all ${
-          depth > 0 ? 'ml-4 sm:ml-6 mt-1.5' : 'mt-2'
+          depth > 0 ? 'ml-3 sm:ml-6 mt-1.5' : 'mt-2'
         }`}
       >
-        {/* Toggle icon or leaf spacer */}
+        {/* Toggle button or leaf spacer */}
         {hasChildren ? (
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors mt-0.5"
-            aria-label={isExpanded ? 'Collapse node' : 'Expand node'}
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} component ${node.name}`}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors mt-0.5 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
           >
             {isExpanded ? (
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
             )}
           </button>
         ) : (
-          <div className="w-5.5 h-5.5 flex items-center justify-center text-slate-600 mt-0.5">
+          <div className="w-5.5 h-5.5 flex items-center justify-center text-slate-600 mt-0.5" aria-hidden="true">
             <Box className="w-3.5 h-3.5 text-slate-500" />
           </div>
         )}
@@ -69,13 +70,13 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
         {/* Node Body */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-100 font-mono tracking-tight text-xs sm:text-sm">
+            <span className="font-semibold text-slate-100 font-mono tracking-tight text-xs sm:text-sm break-all">
               &lt;{node.name} /&gt;
             </span>
 
             {/* UI Type pill */}
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-950/50 border border-indigo-800/40 text-[11px] font-medium text-indigo-300">
-              <Layers className="w-3 h-3" />
+              <Layers className="w-3 h-3" aria-hidden="true" />
               <span>{node.uiType}</span>
             </span>
 
@@ -83,23 +84,23 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
             <span
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-medium ${badge.classes}`}
             >
-              <BadgeIcon className="w-3 h-3" />
+              <BadgeIcon className="w-3 h-3" aria-hidden="true" />
               <span>{badge.label}</span>
             </span>
 
             {/* Suggested Library */}
             {node.suggestedLibraryId && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-950/40 border border-purple-800/40 text-[11px] font-medium text-purple-300">
-                <Tag className="w-3 h-3" />
+                <Tag className="w-3 h-3" aria-hidden="true" />
                 <span>{node.suggestedLibraryId}</span>
               </span>
             )}
           </div>
 
-          <p className="text-xs text-slate-300 mb-1">{node.purpose}</p>
+          <p className="text-xs text-slate-300 mb-1 leading-relaxed break-words">{node.purpose}</p>
 
           {node.observedEvidence && (
-            <p className="text-[11px] text-slate-500 italic bg-slate-950/40 px-2 py-1 rounded-md border border-slate-900 inline-block">
+            <p className="text-[11px] text-slate-500 italic bg-slate-950/40 px-2 py-1 rounded-md border border-slate-900 inline-block break-words">
               Evidence: {node.observedEvidence}
             </p>
           )}
@@ -110,7 +111,7 @@ function TreeNode({ node, depth = 0 }: { node: ComponentTreeNode; depth?: number
       {hasChildren && isExpanded && (
         <div className="border-l border-slate-800/80 ml-3 sm:ml-5 pl-1">
           {node.children!.map((child) => (
-            <TreeNode key={child.id} node={child} depth={depth + 1} />
+            <TreeNode key={`${child.id}-${depth + 1}`} node={child} depth={depth + 1} />
           ))}
         </div>
       )}
@@ -131,10 +132,10 @@ export default function ComponentTree({ tree }: ComponentTreeProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-400" />
-          <h4 className="text-sm font-semibold text-slate-200">
+          <Layers className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-slate-200">
             Detected Component Hierarchy
-          </h4>
+          </h3>
         </div>
         <span className="text-xs text-slate-500 font-mono">
           {tree.length} Root Components
@@ -143,7 +144,7 @@ export default function ComponentTree({ tree }: ComponentTreeProps) {
 
       <div className="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-4 sm:p-5 overflow-x-auto">
         {tree.map((rootNode) => (
-          <TreeNode key={rootNode.id} node={rootNode} />
+          <TreeNode key={`${rootNode.id}-0`} node={rootNode} />
         ))}
       </div>
     </div>

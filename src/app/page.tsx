@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ScreenshotUpload from '@/components/ScreenshotUpload';
 import ConfigurationPanel from '@/components/ConfigurationPanel';
 import ResultsDashboard from '@/components/ResultsDashboard';
 import { generateDeveloperBlueprint } from '@/components/mockSpecAdapter';
 import { mockDashboardAnalysis } from '@/lib/mockAnalysis';
+import { analysisSchema } from '@/lib/schemas';
 import { ValidatedAnalysis } from '@/types/analysis';
 import { DeveloperBlueprint } from '@/types/specification';
 import {
@@ -17,13 +18,12 @@ import {
   Code2,
   AlertCircle,
   Loader2,
-  FileText,
-  Compass,
 } from 'lucide-react';
 
 export default function Home() {
   // Upload and config state
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [framework, setFramework] = useState('nextjs-ts');
   const [styling, setStyling] = useState('tailwind');
   const [instructions, setInstructions] = useState('');
@@ -38,6 +38,36 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<ValidatedAnalysis | null>(null);
   const [blueprint, setBlueprint] = useState<DeveloperBlueprint | null>(null);
 
+  // In-flight request cancellation reference
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Maintain preview URL lifecycle
+  useEffect(() => {
+    if (!file) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  // Cleanup in-flight requests on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const handleAnalyze = async () => {
     setValidationError(null);
     setApiError(null);
@@ -46,6 +76,18 @@ export default function Home() {
       setValidationError('Please upload a user interface screenshot before analyzing.');
       return;
     }
+
+    if (file.size === 0) {
+      setValidationError('The selected file is empty (0 bytes). Please upload a valid image file.');
+      return;
+    }
+
+    // Cancel any existing in-flight request to avoid race conditions
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     setIsLoading(true);
     setLoadingStep('Uploading screenshot to /api/analyze...');
@@ -65,16 +107,25 @@ export default function Home() {
       let fetchedAnalysis: ValidatedAnalysis | null = null;
 
       try {
-        // Send request to real backend API route (do NOT set multipart header manually)
+        // Send request to real backend API route (do NOT set multipart Content-Type header manually)
         const response = await fetch('/api/analyze', {
           method: 'POST',
           body: formData,
+          signal: abortController.signal,
         });
 
         if (response.ok) {
           const data = await response.json();
           if (data && data.analysis) {
-            fetchedAnalysis = data.analysis;
+            // Validate response strictly against shared Zod schema
+            const parsed = analysisSchema.safeParse(data.analysis);
+            if (!parsed.success) {
+              const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+              throw new Error(`API returned response that violates shared schema: ${issues}`);
+            }
+            fetchedAnalysis = parsed.data;
+          } else {
+            throw new Error('API response missing "analysis" property in JSON payload.');
           }
         } else if (response.status === 404) {
           // Backend route not yet deployed by Member 2; fallback seamlessly to shared mock analysis
@@ -87,7 +138,11 @@ export default function Home() {
           throw new Error(errData.error || `Server responded with status ${response.status}`);
         }
       } catch (err: unknown) {
-        // If network failed or endpoint is not implemented, use shared mock analysis if in development
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          // Request was intentionally cancelled
+          return;
+        }
+
         console.warn('API error encountered, applying shared mock analysis fallback:', err);
         setLoadingStep('Using shared mock analysis for testing interface...');
         await new Promise((res) => setTimeout(res, 800));
@@ -107,21 +162,28 @@ export default function Home() {
         setBlueprint(generatedBlueprint);
       }
     } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred during analysis.';
       setApiError(msg);
     } finally {
       setIsLoading(false);
       setLoadingStep('');
+      abortControllerRef.current = null;
     }
   };
 
   const handleClear = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setFile(null);
     setAnalysis(null);
     setBlueprint(null);
     setValidationError(null);
     setApiError(null);
     setInstructions('');
+    setIsLoading(false);
   };
 
   const handleLoadDemo = () => {
@@ -151,7 +213,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-              <Code2 className="w-5 h-5" />
+              <Code2 className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -173,9 +235,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleLoadDemo}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
+                aria-label="Load demo analytics dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
                 <span>Load Sample Dashboard</span>
               </button>
             )}
@@ -193,7 +256,7 @@ export default function Home() {
             {/* Hero Section */}
             <div className="text-center space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-800/50 text-xs font-semibold text-indigo-300">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
                 <span>AI-Powered Frontend Blueprint Generator</span>
               </div>
 
@@ -208,15 +271,15 @@ export default function Home() {
               {/* Value proposition badges */}
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-400" />
+                  <Cpu className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
                   <span>Gemma 4 Multimodal Reasoning</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <Layers className="w-3.5 h-3.5 text-purple-400" />
+                  <Layers className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" />
                   <span>Recursive Component Tree</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
                   <span>Curated Library Catalog</span>
                 </div>
               </div>
@@ -225,10 +288,10 @@ export default function Home() {
             {/* Upload & Configuration Form */}
             <div className="space-y-6 bg-slate-900/20 p-6 sm:p-8 rounded-3xl border border-slate-800/80 shadow-2xl backdrop-blur-sm">
               <div className="space-y-2">
-                <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
+                <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold" aria-hidden="true">1</span>
                   <span>Upload Screenshot</span>
-                </h3>
+                </h2>
                 <ScreenshotUpload
                   onFileSelect={setFile}
                   selectedFile={file}
@@ -239,10 +302,10 @@ export default function Home() {
               </div>
 
               <div className="space-y-2 pt-4">
-                <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+                <h2 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold" aria-hidden="true">2</span>
                   <span>Configure Preferences</span>
-                </h3>
+                </h2>
                 <ConfigurationPanel
                   framework={framework}
                   onFrameworkChange={setFramework}
@@ -256,8 +319,12 @@ export default function Home() {
 
               {/* API / Network Error Alert */}
               {apiError && (
-                <div className="flex items-center gap-2 p-4 bg-rose-950/50 border border-rose-800/60 rounded-2xl text-xs sm:text-sm text-rose-300">
-                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="flex items-center gap-2 p-4 bg-rose-950/50 border border-rose-800/60 rounded-2xl text-xs sm:text-sm text-rose-300"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" aria-hidden="true" />
                   <span>{apiError}</span>
                 </div>
               )}
@@ -268,7 +335,8 @@ export default function Home() {
                   type="button"
                   onClick={handleAnalyze}
                   disabled={!file || isLoading}
-                  className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all ${
+                  aria-label="Analyze screenshot with Gemma 4 model"
+                  className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg transition-all focus-visible:ring-2 focus-visible:ring-indigo-400 focus:outline-none ${
                     !file || isLoading
                       ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
                       : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.01]'
@@ -276,21 +344,25 @@ export default function Home() {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                       <span>Generating Blueprint...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5" />
+                      <Sparkles className="w-5 h-5" aria-hidden="true" />
                       <span>Analyze Screenshot with Gemma 4</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </>
                   )}
                 </button>
 
                 {isLoading && (
-                  <p className="text-xs text-indigo-400 animate-pulse font-mono flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    className="text-xs text-indigo-400 animate-pulse font-mono flex items-center gap-1.5"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" aria-hidden="true" />
                     <span>{loadingStep}</span>
                   </p>
                 )}
@@ -307,6 +379,8 @@ export default function Home() {
           <ResultsDashboard
             analysis={analysis}
             blueprint={blueprint}
+            screenshotFile={file}
+            screenshotPreviewUrl={previewUrl}
             onClear={handleClear}
           />
         )}

@@ -1,4 +1,4 @@
-import { ValidatedAnalysis } from '@/types/analysis';
+import { ValidatedAnalysis } from '../types/analysis';
 
 export const mockDashboardAnalysis: ValidatedAnalysis = {
   pageType: 'dashboard',
@@ -124,4 +124,3 @@ export const mockDashboardAnalysis: ValidatedAnalysis = {
     'Orders table supports pagination or infinite scroll in production',
   ],
 };
-

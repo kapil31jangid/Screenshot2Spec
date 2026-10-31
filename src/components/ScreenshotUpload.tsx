@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Image as ImageIcon, X, AlertCircle, FileText, RefreshCw } from 'lucide-react';
 
 interface ScreenshotUploadProps {
@@ -26,10 +26,34 @@ export default function ScreenshotUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync preview URL and cleanup on unmount or file reset
+  useEffect(() => {
+    if (!selectedFile) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedFile]);
+
   // Helper to validate selected file
   const validateAndSetFile = useCallback(
     (file: File) => {
       onError(null);
+
+      // Check empty file (0 bytes)
+      if (file.size === 0) {
+        onError('The selected file is empty (0 bytes). Please upload a valid image file.');
+        return;
+      }
 
       // Check format
       const isAllowedMime = ALLOWED_MIME_TYPES.includes(file.type);
@@ -52,13 +76,6 @@ export default function ScreenshotUpload({
         );
         return;
       }
-
-      // Create preview URL
-      const objectUrl = URL.createObjectURL(file);
-      setPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return objectUrl;
-      });
 
       onFileSelect(file);
     },
@@ -99,10 +116,6 @@ export default function ScreenshotUpload({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
     onFileSelect(null);
     onError(null);
     if (fileInputRef.current) {
@@ -113,6 +126,14 @@ export default function ScreenshotUpload({
   const handleTriggerUpload = () => {
     if (!disabled && fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTriggerUpload();
     }
   };
 
@@ -127,6 +148,7 @@ export default function ScreenshotUpload({
       <input
         ref={fileInputRef}
         type="file"
+        aria-label="Upload screenshot file"
         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
         className="hidden"
         onChange={handleInputChange}
@@ -136,29 +158,33 @@ export default function ScreenshotUpload({
       {/* Upload Box / Preview Area */}
       {!selectedFile ? (
         <div
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-label="Upload screenshot by clicking or dragging and dropping an image"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleTriggerUpload}
-          className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[260px] ${
+          onKeyDown={handleKeyDown}
+          className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center transition-all duration-200 flex flex-col items-center justify-center min-h-[260px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
             isDragging
               ? 'border-indigo-500 bg-indigo-950/20 shadow-lg shadow-indigo-500/10'
               : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform mb-4 shadow-inner">
-            <Upload className="w-8 h-8" />
+            <Upload className="w-8 h-8" aria-hidden="true" />
           </div>
 
-          <h3 className="text-base sm:text-lg font-semibold text-slate-200 mb-1">
+          <h4 className="text-base sm:text-lg font-semibold text-slate-200 mb-1">
             Drag & drop your screenshot here
-          </h3>
+          </h4>
           <p className="text-xs sm:text-sm text-slate-400 mb-4 max-w-sm">
-            or click to browse from your computer. Supports PNG, JPEG, and WebP (up to 5 MB).
+            or press Enter / click to browse. Supports PNG, JPEG, and WebP (up to 5 MB).
           </p>
 
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-400">
-            <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
+            <ImageIcon className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
             <span>Dashboard, Landing Page, Forms, or App UI</span>
           </div>
         </div>
@@ -167,7 +193,7 @@ export default function ScreenshotUpload({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                <FileText className="w-5 h-5" />
+                <FileText className="w-5 h-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-200 truncate max-w-xs sm:max-w-md">
@@ -184,20 +210,22 @@ export default function ScreenshotUpload({
                 type="button"
                 onClick={handleTriggerUpload}
                 disabled={disabled}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 transition-colors disabled:opacity-50"
+                aria-label="Replace screenshot image"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none"
                 title="Replace image"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Replace</span>
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
                 disabled={disabled}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 bg-rose-950/30 hover:bg-rose-900/50 hover:text-rose-300 rounded-lg border border-rose-800/40 transition-colors disabled:opacity-50"
+                aria-label="Remove selected screenshot"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-400 bg-rose-950/30 hover:bg-rose-900/50 hover:text-rose-300 rounded-lg border border-rose-800/40 transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-rose-500 focus:outline-none"
                 title="Remove image"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Remove</span>
               </button>
             </div>
@@ -209,7 +237,7 @@ export default function ScreenshotUpload({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
-                alt="Uploaded screenshot preview"
+                alt={`Preview of uploaded screenshot: ${selectedFile.name}`}
                 className="max-h-80 w-auto object-contain rounded-lg shadow-md"
               />
             </div>
@@ -219,8 +247,12 @@ export default function ScreenshotUpload({
 
       {/* Validation Error Banner */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-rose-950/40 border border-rose-800/50 rounded-xl text-xs sm:text-sm text-rose-300 animate-fadeIn">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="flex items-center gap-2 p-3 bg-rose-950/40 border border-rose-800/50 rounded-xl text-xs sm:text-sm text-rose-300 animate-fadeIn"
+        >
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" aria-hidden="true" />
           <span>{error}</span>
         </div>
       )}
