@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test --import tsx tests/backend.test.ts tests/route.test.ts",
-    "test:live": "node --test --import tsx tests/live-integration.test.ts",
+    "test": "npm run backend:test",
+    "test:live": "tsx --test backend/tests/live-integration.test.ts",
     "backend:dev": "tsx watch backend/src/server.ts",
     "backend:start": "tsx backend/src/server.ts",
     "backend:test": "node --test --import tsx backend/tests/backend.test.ts backend/tests/route.test.ts"
