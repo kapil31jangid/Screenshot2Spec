@@ -79,3 +79,4 @@ export function useScreenshot() {
     clearFile,
   };
 }
+

@@ -27,3 +27,4 @@ export function useClipboard(timeout = 2000) {
 
   return { copy, isCopied, copiedKey };
 }
+
